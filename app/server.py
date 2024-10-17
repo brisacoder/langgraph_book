@@ -18,10 +18,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI
 from langserve import add_routes
 
-from app.routes.agents import router as agents_router
-from app.routes.ratings import router as ratings_router
-from app.routes.applications import router as applications_router
-from app.routes.database import database as database_router
+from app.routes.patterns.reflection import router as agents_router
 from app.state import AppState
 
 
