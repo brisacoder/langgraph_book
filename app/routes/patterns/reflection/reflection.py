@@ -1,12 +1,13 @@
-from ast import Dict
 import asyncio
 import operator
 import shutil
 import uuid
+import logging
+from typing import Dict
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from typing import Annotated, List, Sequence
+from typing import Annotated
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph, START
 from langgraph.graph.message import add_messages
@@ -15,11 +16,15 @@ from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import TypedDict
 from colorama import Fore, Style
 
+MAX_ROUNDS = 3
+
+# Configure logging
+log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 class State(TypedDict):
     messages: Annotated[list, add_messages]
     rounds: Annotated[int, operator.add]
-    start_message: int
 
 
 async def generation_node(state: State) -> State:
@@ -40,7 +45,8 @@ async def generation_node(state: State) -> State:
     try:
         return {"messages": [await generate.ainvoke(state["messages"])], "rounds": 1}
     except RuntimeError as e:
-        print({e})
+        logging.error(f"Error in generation_node: {e}")
+        return {"messages": [], "rounds": 1}  # Return a default state
 
 
 
@@ -67,7 +73,8 @@ async def reflection_node(state: State) -> State:
     try:
         res = await reflect.ainvoke(translated)
     except RuntimeError as e:
-        print({e})
+        logging.error(f"Error in generation_node: {e}")
+        return {"messages": []}  # Return a default state
 
     # We treat the output of this as human feedback for the generator
     return {"messages": [HumanMessage(content=res.content)]}
@@ -86,7 +93,7 @@ def build_graph() -> CompiledStateGraph:
 
 
     def should_continue(state: State):
-        if state["rounds"] > 3:
+        if state["rounds"] > MAX_ROUNDS:
             return "end"
         return "reflect"
 
@@ -124,34 +131,6 @@ def build_color_map(graph):
             color_map[node] = colors[i % num_colors]
             color = color_map[node]
     return color_map
-
-
-def get_message(event):
-    messages = ""
-    colors = [getattr(Fore, attr) for attr in dir(Fore) if attr.isupper()]
-    color_map= {}
-    num_colors = len(colors)
-
-    # Get terminal width (fall back to 80 if it cannot be determined)
-    terminal_width = shutil.get_terminal_size((80, 20)).columns
-
-    node = list(event.keys())[0]
-    
-    # Assign a color for the node if it's not already mapped
-    color = color_map.get(node, None)
-    if color is None:
-        color_map[node] = colors[i % num_colors]
-        color = color_map[node]
-    
-    # Create the centered header
-    header = f" {node} ".center(terminal_width, '=')
-    messages += f"\n{Style.RESET_ALL}{header}{Style.RESET_ALL}"
-    
-    # Print the event message in the assigned color
-    if "messages" in event[node]:
-        messages += f"{color}{node}: {event[node]['messages'][0].content}{Style.RESET_ALL}"
-
-    return messages
 
 
 async def process_events(graph: CompiledStateGraph, human_message: str, config: Dict):
