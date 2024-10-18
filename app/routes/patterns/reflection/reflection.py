@@ -103,8 +103,8 @@ async def reflection_node(state: State) -> Dict:
             MessagesPlaceholder(variable_name="messages"),
         ]
     )
-    llm = ChatOpenAI()    
-    reflect = reflection_prompt | llm    
+    llm = ChatOpenAI()
+    reflect = reflection_prompt | llm
     # Other messages we need to adjust
     cls_map = {"ai": HumanMessage, "human": AIMessage}
     if not state.get("messages"):
@@ -112,7 +112,7 @@ async def reflection_node(state: State) -> Dict:
         return default_state()
 
     # Proceed with the rest of the function
-    first_message = state["messages"][0]    
+    first_message = state["messages"][0]
     # First message is the original user request. We hold it the same for all nodes
     translated = [first_message] + [
         cls_map[msg.type](content=msg.content) for msg in state["messages"][1:]
@@ -197,13 +197,13 @@ async def print_message(event: Dict[str, Any], config: Dict[str, Any]):
     terminal_width = shutil.get_terminal_size((80, 20)).columns
     header = f" {node} ".center(terminal_width, '=')
     print(f"\n{Style.RESET_ALL}{header}{Style.RESET_ALL}")
-    
+
     # Print the event message in the assigned color
     color = config["configurable"]["color_map"][node]
     if "messages" in event[node] and event[node]["messages"]:
         print(f"{color}{node}: {event[node]['messages'][0].content}{Style.RESET_ALL}")
     else:
-        logging.warning(f"No messages found in event for node '{node}'")   
+        logging.warning(f"No messages found in event for node '{node}'")
 
 
 def build_color_map(graph: CompiledStateGraph) -> Dict[str, str]:
@@ -270,15 +270,15 @@ async def main():
         while True:
             # Get user input
             user_input = input(f"{Fore.BLUE}User: {Style.RESET_ALL}")
-            
+
             # Exit condition
             if user_input.strip().lower() in ['exit', 'quit']:
                 print(f"{Fore.GREEN}Assistant: Goodbye!{Style.RESET_ALL}")
                 break
 
-            print(f"\n{Fore.GREEN}Assistant: Gossiping with agents, wait...{Style.RESET_ALL}\n")    
-            await process_events(graph, user_input, config) 
-            
+            print(f"\n{Fore.GREEN}Assistant: Gossiping with agents, wait...{Style.RESET_ALL}\n")
+            await process_events(graph, user_input, config)
+
             # Display assistant response
             state = await graph.aget_state(config)
             # After
