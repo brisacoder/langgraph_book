@@ -36,7 +36,11 @@ async def generation_node(state: State) -> State:
     llm = ChatOpenAI()
     generate = prompt | llm
 
-    return {"messages": [await generate.ainvoke(state["messages"])], "rounds": 1}
+    try:
+        return {"messages": [await generate.ainvoke(state["messages"])], "rounds": 1}
+    except RuntimeError as e:
+        print({e})
+
 
 
 async def reflection_node(state: State) -> State:
@@ -58,7 +62,11 @@ async def reflection_node(state: State) -> State:
     translated = [state["messages"][0]] + [
         cls_map[msg.type](content=msg.content) for msg in state["messages"][1:]
     ]
-    res = await reflect.ainvoke(translated)
+    try:
+        res = await reflect.ainvoke(translated)
+    except RuntimeError as e:
+        print({e})
+
     # We treat the output of this as human feedback for the generator
     return {"messages": [HumanMessage(content=res.content)]}
 
@@ -89,28 +97,17 @@ def build_graph() -> CompiledStateGraph:
     return graph
 
 
-async def process_events(graph: CompiledStateGraph, human_message: str, config: Dict):
-    async for event in graph.astream(
-        {
-            "messages": [
-                HumanMessage(
-                    content=human_message
-                )
-            ],
-        },
-        config,
-    ):
-        node = list(event.keys())[0]
-        # Get terminal width (fall back to 80 if it cannot be determined)
-        terminal_width = shutil.get_terminal_size((80, 20)).columns
-        header = f" {node} ".center(terminal_width, '=')
-        print(f"\n{Style.RESET_ALL}{header}{Style.RESET_ALL}")
-        
-        # Print the event message in the assigned color
-        color = config["configurable"]["color_map"][node]
-        if "messages" in event[node]:
-            print(f"{color}{node}: {event[node]['messages'][0].content}{Style.RESET_ALL}")
-
+async def print_message(event, config):
+    node = list(event.keys())[0]
+    # Get terminal width (fall back to 80 if it cannot be determined)
+    terminal_width = shutil.get_terminal_size((80, 20)).columns
+    header = f" {node} ".center(terminal_width, '=')
+    print(f"\n{Style.RESET_ALL}{header}{Style.RESET_ALL}")
+    
+    # Print the event message in the assigned color
+    color = config["configurable"]["color_map"][node]
+    if "messages" in event[node]:
+        print(f"{color}{node}: {event[node]['messages'][0].content}{Style.RESET_ALL}")    
 
 def build_color_map(graph):
     nodes = list(graph.nodes.keys())
@@ -155,13 +152,26 @@ def get_message(event):
     return messages
 
 
-def main():
+async def process_events(graph: CompiledStateGraph, human_message: str, config: Dict):
+    async for event in graph.astream(
+        {
+            "messages": [
+                HumanMessage(
+                    content=human_message
+                )
+            ],
+        },
+        config,
+    ):
+        await print_message(event, config)
+
+async def main():
     load_dotenv()
     graph = build_graph()
     print("Welcome to the Reflection Chat! Type 'exit' to quit.\n")
+    config = {"configurable": {"thread_id": uuid.uuid4(), "color_map": build_color_map(graph)}}
     while True:
         # Get user input
-        config = {"configurable": {"thread_id": uuid.uuid4(), "color_map": build_color_map(graph)}}
         user_input = input(f"{Fore.BLUE}User: {Style.RESET_ALL}")
         
         # Exit condition
@@ -169,13 +179,15 @@ def main():
             print(f"{Fore.GREEN}Assistant: Goodbye!{Style.RESET_ALL}")
             break
 
-        asyncio.run(process_events(graph, user_input, config))  
+        print(f"\n{Fore.GREEN}Assistant: Gossiping with agents, wait...{Style.RESET_ALL}\n")    
+        await process_events(graph, user_input, config) 
         
         # Display assistant response
-        ai_message = graph.get_state(config).values["messages"][-1].content
+        state = await graph.aget_state(config)
+        ai_message = state.values["messages"][-1].content
         print(f"\n{Fore.GREEN}Assistant: {ai_message}{Style.RESET_ALL}\n")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
 
