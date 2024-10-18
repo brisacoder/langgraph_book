@@ -28,7 +28,8 @@ async def generation_node(state: State) -> State:
             (
                 "system",
                 "You are an helpful assistant doing critical work, attention to detail is important"
-                " If the user provides critique, respond with a revised version of your previous attempts.",
+                " If the user provides critique, respond with a revised version of your previous attempts."
+                "Always ends your messages with a separating line and the final review of the work.",
             ),
             MessagesPlaceholder(variable_name="messages"),
         ]
@@ -49,7 +50,8 @@ async def reflection_node(state: State) -> State:
             (
                 "system",
                 "You are a critique assistant. Generate critique and recommendations for the user's submission."
-                "Provide detailed recommendations appropriate for the task",
+                "Provide detailed recommendations appropriate for the task. If no further improvement are "
+                "warranted, clearly state it",
             ),
             MessagesPlaceholder(variable_name="messages"),
         ]
