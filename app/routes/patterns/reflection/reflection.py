@@ -1,12 +1,16 @@
 import asyncio
+import shutil
+from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from typing import Annotated, List, Sequence
+from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph, START
 from langgraph.graph.message import add_messages
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import TypedDict
+from colorama import Fore, Style
 
 
 class State(TypedDict):
@@ -24,14 +28,8 @@ async def generation_node(state: State) -> State:
             MessagesPlaceholder(variable_name="messages"),
         ]
     )
-    llm = ChatFireworks(
-        model="accounts/fireworks/models/mixtral-8x7b-instruct", max_tokens=32768
-    )
+    llm = ChatOpenAI()
     generate = prompt | llm
-
-    for chunk in generate.stream({"messages": [request]}):
-        print(chunk.content, end="")
-        essay += chunk.content
 
     return {"messages": [await generate.ainvoke(state["messages"])]}
 
@@ -42,14 +40,12 @@ async def reflection_node(state: State) -> State:
             (
                 "system",
                 "You are a critique assistant. Generate critique and recommendations for the user's submission."
-                " Provide detailed recommendations appropriate for the task",
+                "Provide detailed recommendations appropriate for the task",
             ),
             MessagesPlaceholder(variable_name="messages"),
         ]
     )
-    llm = ChatFireworks(
-        model="accounts/fireworks/models/mixtral-8x7b-instruct", max_tokens=32768
-    )    
+    llm = ChatOpenAI()    
     reflect = reflection_prompt | llm    
     # Other messages we need to adjust
     cls_map = {"ai": HumanMessage, "human": AIMessage}
@@ -84,6 +80,7 @@ def build_graph() -> CompiledStateGraph:
 
 
 async def process_events(graph: CompiledStateGraph, human_message):
+    events = []
     config = {"configurable": {"thread_id": "1"}}
     async for event in graph.astream(
         {
@@ -95,7 +92,60 @@ async def process_events(graph: CompiledStateGraph, human_message):
         },
         config,
     ):
-        print(event)
-        print("---")
+        events.append(event)
+    return events
 
-asyncio.run(process_events())
+
+def print_events(events):
+    colors = [getattr(Fore, attr) for attr in dir(Fore) if attr.isupper()]
+    color_map= {}
+    num_colors = len(colors)
+
+    # Get terminal width (fall back to 80 if it cannot be determined)
+    terminal_width = shutil.get_terminal_size((80, 20)).columns
+
+    for i, event in enumerate(events):
+        node = list(event.keys())[0]
+        
+        # Assign a color for the node if it's not already mapped
+        color = color_map.get(node, None)
+        if color is None:
+            color_map[node] = colors[i % num_colors]
+            color = color_map[node]
+        
+        # Create the centered header
+        header = f" {node} ".center(terminal_width, '=')
+        print(f"\n{Style.RESET_ALL}{header}{Style.RESET_ALL}")
+        
+        # Print the event message in the assigned color
+        print(f"{color}{node}: {event[node]['messages'][0].content}{Style.RESET_ALL}")
+
+
+def main():
+    load_dotenv()
+    graph = build_graph()
+    print("Welcome to the ChatGPT Mock Chat! Type 'exit' to quit.\n")
+    while True:
+        # Get user input
+        user_input = input(f"{Fore.BLUE}User: {Style.RESET_ALL}")
+        
+        # Exit condition
+        if user_input.strip().lower() in ['exit', 'quit']:
+            print(f"{Fore.GREEN}Assistant: Goodbye!{Style.RESET_ALL}")
+            break
+        
+        # Mock assistant response
+        assistant_response = f"You said: '{user_input}'"
+
+        events = asyncio.run(process_events(graph, user_input))
+        print_events(events)    
+        
+        # Display assistant response
+        # event['generate']['messages'][0].content
+        ai_message = graph.get_state({"configurable": {"thread_id": "1"}}).values["messages"][-1].content
+        print(f"\n{Fore.GREEN}Assistant: {ai_message}{Style.RESET_ALL}\n")
+
+
+if __name__ == "__main__":
+    main()
+
