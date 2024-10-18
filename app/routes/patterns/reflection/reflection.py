@@ -1,4 +1,5 @@
 import asyncio
+import operator
 import shutil
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -15,6 +16,7 @@ from colorama import Fore, Style
 
 class State(TypedDict):
     messages: Annotated[list, add_messages]
+    rounds: Annotated[int, operator.add]
 
 
 async def generation_node(state: State) -> State:
@@ -31,7 +33,7 @@ async def generation_node(state: State) -> State:
     llm = ChatOpenAI()
     generate = prompt | llm
 
-    return {"messages": [await generate.ainvoke(state["messages"])]}
+    return {"messages": [await generate.ainvoke(state["messages"])], "rounds": 1}
 
 
 async def reflection_node(state: State) -> State:
@@ -65,7 +67,7 @@ def build_graph() -> CompiledStateGraph:
 
 
     def should_continue(state: State):
-        if len(state["messages"]) > 6:
+        if state["rounds"] > 3:
             # End after 3 iterations
             return END
         return "reflect"
@@ -82,6 +84,10 @@ def build_graph() -> CompiledStateGraph:
 async def process_events(graph: CompiledStateGraph, human_message):
     events = []
     config = {"configurable": {"thread_id": "1"}}
+    state = graph.get_state(config)
+    # Reset number of rounds so reflection happens again. 
+    # TODO: how user can control whether to use refelction?
+    state.values["rounds"] = 0
     async for event in graph.astream(
         {
             "messages": [
@@ -133,9 +139,6 @@ def main():
         if user_input.strip().lower() in ['exit', 'quit']:
             print(f"{Fore.GREEN}Assistant: Goodbye!{Style.RESET_ALL}")
             break
-        
-        # Mock assistant response
-        assistant_response = f"You said: '{user_input}'"
 
         events = asyncio.run(process_events(graph, user_input))
         print_events(events)    
