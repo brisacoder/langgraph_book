@@ -17,7 +17,6 @@ from langchain_core.runnables import RunnableLambda
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.routes.patterns.reflection import router as agents_router
-from app.state import AppState
 
 
 def load_env_file():

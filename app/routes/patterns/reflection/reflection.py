@@ -59,17 +59,22 @@ async def reflection_node(state: State) -> State:
     # We treat the output of this as human feedback for the generator
     return {"messages": [HumanMessage(content=res.content)]}
 
+async def end_node(state: State) -> State:
+    return {"rounds": -state["rounds"]}
+
 def build_graph() -> CompiledStateGraph:
     builder = StateGraph(State)
     builder.add_node("generate", generation_node)
     builder.add_node("reflect", reflection_node)
+    builder.add_node("end", end_node)
     builder.add_edge(START, "generate")
+    builder.add_edge("end", END)
+
 
 
     def should_continue(state: State):
         if state["rounds"] > 3:
-            # End after 3 iterations
-            return END
+            return "end"
         return "reflect"
 
 
@@ -84,10 +89,6 @@ def build_graph() -> CompiledStateGraph:
 async def process_events(graph: CompiledStateGraph, human_message):
     events = []
     config = {"configurable": {"thread_id": "1"}}
-    state = graph.get_state(config)
-    # Reset number of rounds so reflection happens again. 
-    # TODO: how user can control whether to use refelction?
-    state.values["rounds"] = 0
     async for event in graph.astream(
         {
             "messages": [
@@ -99,7 +100,7 @@ async def process_events(graph: CompiledStateGraph, human_message):
         config,
     ):
         events.append(event)
-    return events
+    return get_messages(events)
 
 
 def print_events(events):
@@ -126,11 +127,38 @@ def print_events(events):
         # Print the event message in the assigned color
         print(f"{color}{node}: {event[node]['messages'][0].content}{Style.RESET_ALL}")
 
+def get_messages(events):
+    messages = ""
+    colors = [getattr(Fore, attr) for attr in dir(Fore) if attr.isupper()]
+    color_map= {}
+    num_colors = len(colors)
+
+    # Get terminal width (fall back to 80 if it cannot be determined)
+    terminal_width = shutil.get_terminal_size((80, 20)).columns
+
+    for i, event in enumerate(events):
+        node = list(event.keys())[0]
+        
+        # Assign a color for the node if it's not already mapped
+        color = color_map.get(node, None)
+        if color is None:
+            color_map[node] = colors[i % num_colors]
+            color = color_map[node]
+        
+        # Create the centered header
+        header = f" {node} ".center(terminal_width, '=')
+        messages += f"\n{Style.RESET_ALL}{header}{Style.RESET_ALL}"
+        
+        # Print the event message in the assigned color
+        if "messages" in event[node]:
+            messages += f"{color}{node}: {event[node]['messages'][0].content}{Style.RESET_ALL}"
+    
+    return messages    
 
 def main():
     load_dotenv()
     graph = build_graph()
-    print("Welcome to the ChatGPT Mock Chat! Type 'exit' to quit.\n")
+    print("Welcome to the Reflection Chat! Type 'exit' to quit.\n")
     while True:
         # Get user input
         user_input = input(f"{Fore.BLUE}User: {Style.RESET_ALL}")
@@ -140,11 +168,10 @@ def main():
             print(f"{Fore.GREEN}Assistant: Goodbye!{Style.RESET_ALL}")
             break
 
-        events = asyncio.run(process_events(graph, user_input))
-        print_events(events)    
+        reasoning = asyncio.run(process_events(graph, user_input))
+        print(reasoning)    
         
         # Display assistant response
-        # event['generate']['messages'][0].content
         ai_message = graph.get_state({"configurable": {"thread_id": "1"}}).values["messages"][-1].content
         print(f"\n{Fore.GREEN}Assistant: {ai_message}{Style.RESET_ALL}\n")
 
