@@ -1,6 +1,8 @@
+from ast import Dict
 import asyncio
 import operator
 import shutil
+import uuid
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -17,6 +19,7 @@ from colorama import Fore, Style
 class State(TypedDict):
     messages: Annotated[list, add_messages]
     rounds: Annotated[int, operator.add]
+    start_message: int
 
 
 async def generation_node(state: State) -> State:
@@ -86,9 +89,7 @@ def build_graph() -> CompiledStateGraph:
     return graph
 
 
-async def process_events(graph: CompiledStateGraph, human_message):
-    events = []
-    config = {"configurable": {"thread_id": "1"}}
+async def process_events(graph: CompiledStateGraph, human_message: str, config: Dict):
     async for event in graph.astream(
         {
             "messages": [
@@ -99,35 +100,34 @@ async def process_events(graph: CompiledStateGraph, human_message):
         },
         config,
     ):
-        events.append(event)
-    return get_messages(events)
+        node = list(event.keys())[0]
+        # Get terminal width (fall back to 80 if it cannot be determined)
+        terminal_width = shutil.get_terminal_size((80, 20)).columns
+        header = f" {node} ".center(terminal_width, '=')
+        print(f"\n{Style.RESET_ALL}{header}{Style.RESET_ALL}")
+        
+        # Print the event message in the assigned color
+        color = config["configurable"]["color_map"][node]
+        if "messages" in event[node]:
+            print(f"{color}{node}: {event[node]['messages'][0].content}{Style.RESET_ALL}")
 
 
-def print_events(events):
+def build_color_map(graph):
+    nodes = list(graph.nodes.keys())
     colors = [getattr(Fore, attr) for attr in dir(Fore) if attr.isupper()]
     color_map= {}
     num_colors = len(colors)
 
-    # Get terminal width (fall back to 80 if it cannot be determined)
-    terminal_width = shutil.get_terminal_size((80, 20)).columns
-
-    for i, event in enumerate(events):
-        node = list(event.keys())[0]
-        
+    for i, node in enumerate(nodes):
         # Assign a color for the node if it's not already mapped
         color = color_map.get(node, None)
         if color is None:
             color_map[node] = colors[i % num_colors]
             color = color_map[node]
-        
-        # Create the centered header
-        header = f" {node} ".center(terminal_width, '=')
-        print(f"\n{Style.RESET_ALL}{header}{Style.RESET_ALL}")
-        
-        # Print the event message in the assigned color
-        print(f"{color}{node}: {event[node]['messages'][0].content}{Style.RESET_ALL}")
+    return color_map
 
-def get_messages(events):
+
+def get_message(event):
     messages = ""
     colors = [getattr(Fore, attr) for attr in dir(Fore) if attr.isupper()]
     color_map= {}
@@ -136,24 +136,24 @@ def get_messages(events):
     # Get terminal width (fall back to 80 if it cannot be determined)
     terminal_width = shutil.get_terminal_size((80, 20)).columns
 
-    for i, event in enumerate(events):
-        node = list(event.keys())[0]
-        
-        # Assign a color for the node if it's not already mapped
-        color = color_map.get(node, None)
-        if color is None:
-            color_map[node] = colors[i % num_colors]
-            color = color_map[node]
-        
-        # Create the centered header
-        header = f" {node} ".center(terminal_width, '=')
-        messages += f"\n{Style.RESET_ALL}{header}{Style.RESET_ALL}"
-        
-        # Print the event message in the assigned color
-        if "messages" in event[node]:
-            messages += f"{color}{node}: {event[node]['messages'][0].content}{Style.RESET_ALL}"
+    node = list(event.keys())[0]
     
-    return messages    
+    # Assign a color for the node if it's not already mapped
+    color = color_map.get(node, None)
+    if color is None:
+        color_map[node] = colors[i % num_colors]
+        color = color_map[node]
+    
+    # Create the centered header
+    header = f" {node} ".center(terminal_width, '=')
+    messages += f"\n{Style.RESET_ALL}{header}{Style.RESET_ALL}"
+    
+    # Print the event message in the assigned color
+    if "messages" in event[node]:
+        messages += f"{color}{node}: {event[node]['messages'][0].content}{Style.RESET_ALL}"
+
+    return messages
+
 
 def main():
     load_dotenv()
@@ -161,6 +161,7 @@ def main():
     print("Welcome to the Reflection Chat! Type 'exit' to quit.\n")
     while True:
         # Get user input
+        config = {"configurable": {"thread_id": uuid.uuid4(), "color_map": build_color_map(graph)}}
         user_input = input(f"{Fore.BLUE}User: {Style.RESET_ALL}")
         
         # Exit condition
@@ -168,11 +169,10 @@ def main():
             print(f"{Fore.GREEN}Assistant: Goodbye!{Style.RESET_ALL}")
             break
 
-        reasoning = asyncio.run(process_events(graph, user_input))
-        print(reasoning)    
+        asyncio.run(process_events(graph, user_input, config))  
         
         # Display assistant response
-        ai_message = graph.get_state({"configurable": {"thread_id": "1"}}).values["messages"][-1].content
+        ai_message = graph.get_state(config).values["messages"][-1].content
         print(f"\n{Fore.GREEN}Assistant: {ai_message}{Style.RESET_ALL}\n")
 
 
