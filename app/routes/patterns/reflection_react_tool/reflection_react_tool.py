@@ -1,13 +1,16 @@
 import asyncio
 import operator
+import os
 import shutil
 import uuid
 import logging
 from typing import Dict, List, Any
 from dotenv import load_dotenv
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, BaseMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.config import RunnableConfig
+from langchain_community.tools.tavily_search import TavilySearchResults
+from langgraph.prebuilt import ToolNode
 from typing import Annotated
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph, START
@@ -71,8 +74,11 @@ async def generation_node(state: State, config: RunnableConfig) -> Dict:
     # default is ReACT prompt
     system_prompt = config["configurable"].get("system_prompt", Prompts.REACT)
     partial_prompt = prompt.partial(system_prompt=system_prompt)
-    llm = ChatOpenAI()
-    generate = partial_prompt | llm
+    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"))
+    tool = TavilySearchResults(max_results=2)
+    tools = [tool]
+    llm_with_tools = llm.bind_tools(tools)
+    generate = partial_prompt | llm_with_tools
 
     try:
         return {"messages": [await generate.ainvoke({"messages": state["messages"]})], "rounds": 1}
@@ -101,15 +107,15 @@ async def reflection_node(state: State) -> Dict:
                 "system",
                 "You are a critique assistant. Generate critique and recommendations for the user's submission."
                 "Provide detailed recommendations appropriate for the task. If no further improvement are "
-                "warranted, clearly state it",
+                "warranted, clearly state it. Do not nit pick.",
             ),
             MessagesPlaceholder(variable_name="messages"),
         ]
     )
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"))
     reflect = reflection_prompt | llm
     # Other messages we need to adjust
-    cls_map = {"ai": HumanMessage, "human": AIMessage}
+    cls_map = {"ai": HumanMessage, "human": AIMessage, "tool": ToolMessage}
     if not state.get("messages"):
         logging.warning("No messages available in state for reflection.")
         return default_state()
@@ -154,8 +160,16 @@ def build_graph() -> CompiledStateGraph:
         - Defines nodes for generation, reflection, and ending the conversation.
         - Sets up conditional transitions based on the number of rounds.
     """
+
+    tool = TavilySearchResults(max_results=2)
+
     builder = StateGraph(State)
+    # Tool node
+    tool_node = ToolNode(tools=[tool])
+    builder.add_node("tools", tool_node)
+
     builder.add_node("generate", generation_node)
+    builder.add_edge("tools", "generate")
     builder.add_node("reflect", reflection_node)
     builder.add_node("end", end_node)
     builder.add_edge(START, "generate")
@@ -173,6 +187,16 @@ def build_graph() -> CompiledStateGraph:
         """
         if state["rounds"] > MAX_ROUNDS:
             return "end"
+        if isinstance(state, list):
+            last_message = state[-1]
+        elif isinstance(state, dict) and (messages := state.get("messages", [])):
+            last_message = messages[-1]
+        elif messages := getattr(state, "messages", []):
+            last_message = messages[-1]
+        else:
+            raise ValueError(f"No messages found in input state to tool_edge: {state}")
+        if isinstance(last_message, AIMessage) and hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
+            return "tools"
         return "reflect"
 
     builder.add_conditional_edges("generate", should_continue)

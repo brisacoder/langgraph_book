@@ -163,7 +163,7 @@ def build_graph() -> CompiledStateGraph:
     builder.add_node("reflect", reflection_node)
     builder.add_node("end", end_node)
     builder.add_edge(START, "generate")
-    # builder.add_edge("end", END)
+    builder.add_edge("end", END)
 
     def should_continue(state: State) -> str:
         """
@@ -176,7 +176,7 @@ def build_graph() -> CompiledStateGraph:
             str: The name of the next node ('end' or 'reflect').
         """
         if state["rounds"] > MAX_ROUNDS:
-            return END
+            return "end"
         return "reflect"
 
     builder.add_conditional_edges("generate", should_continue)
