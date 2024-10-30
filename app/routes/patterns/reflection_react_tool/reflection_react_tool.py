@@ -100,6 +100,7 @@ async def reflection_node(state: State) -> Dict:
     Notes:
         - Swaps the roles of AI and human messages to simulate reflection.
         - If an error occurs, logs the error and returns a default state.
+        - We do not translate ToolMessages or tool_calls
     """
     reflection_prompt = ChatPromptTemplate.from_messages(
         [
@@ -126,6 +127,7 @@ async def reflection_node(state: State) -> Dict:
     try:
         translated = [first_message]
         for msg in state["messages"][1:]:
+            # We do not translate AI tool calls or ToolMessages
             if isinstance(msg, AIMessage) and hasattr(msg, "tool_calls") and len(msg.tool_calls) > 0:
                 translated += [msg]
             elif isinstance(msg, ToolMessage):
@@ -134,7 +136,7 @@ async def reflection_node(state: State) -> Dict:
                 content = msg.content
                 translated += [cls_map[msg.type](content=content)]
     except Exception as e:
-        logging.error(f"Error processing events: {e}")
+        logging.error(f"Error translating messages: {e}")
 
     try:
         res = await reflect.ainvoke({"messages": translated})

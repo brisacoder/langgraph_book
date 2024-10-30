@@ -6,7 +6,7 @@ import uuid
 import logging
 from typing import Dict, List, Any
 from dotenv import load_dotenv
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, BaseMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.config import RunnableConfig
 from typing import Annotated
@@ -118,9 +118,20 @@ async def reflection_node(state: State) -> Dict:
     # Proceed with the rest of the function
     first_message = state["messages"][0]
     # First message is the original user request. We hold it the same for all nodes
-    translated = [first_message] + [
-        cls_map[msg.type](content=msg.content) for msg in state["messages"][1:]
-    ]
+    try:
+        translated = [first_message]
+        for msg in state["messages"][1:]:
+            # We do not translate AI tool calls or ToolMessages
+            if isinstance(msg, AIMessage) and hasattr(msg, "tool_calls") and len(msg.tool_calls) > 0:
+                translated += [msg]
+            elif isinstance(msg, ToolMessage):
+                translated += [msg]
+            else:
+                content = msg.content
+                translated += [cls_map[msg.type](content=content)]
+    except Exception as e:
+        logging.error(f"Error translating messages: {e}")
+
     try:
         res = await reflect.ainvoke({"messages": translated})
     except RuntimeError as e:
