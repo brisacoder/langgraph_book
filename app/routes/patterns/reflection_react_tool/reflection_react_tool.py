@@ -1,6 +1,5 @@
 import asyncio
 import operator
-import os
 import shutil
 import uuid
 import logging
@@ -17,6 +16,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import TypedDict
 from colorama import Fore, Style
+from prompts import Prompts  # type: ignore
 
 MAX_ROUNDS = 3
 
@@ -45,7 +45,7 @@ class State(TypedDict):
     rounds: Annotated[int, operator.add]
 
 
-async def generation_node(state: State) -> Dict:
+async def generation_node(state: State, config: RunnableConfig) -> Dict:
     """
     Generates the assistant's response based on the current state.
 
@@ -59,22 +59,20 @@ async def generation_node(state: State) -> Dict:
         - Uses the ChatOpenAI model to generate the assistant's reply.
         - If an error occurs, logs the error and returns a default state.
     """
-    prompt = ChatPromptTemplate.from_messages(
+    prompt = ChatPromptTemplate(
         [
             (
                 "system",
-                "You are a helpful assistant engaged in critical work; attention to detail is essential."
-                " When the user provides critique, you will incorporate it into your last answer, keeping in mind: "
-                " 1. Always work off your last answer without collating information from previous attempts. "
-                " 2 - Do not remove information unless it is incorrect. "
-                " 3 - Ensure that the text flows smoothly and coherently. "
-                "Always end your messages with a separating line followed by a final review of the work. ",
+                "{system_prompt}",
             ),
             MessagesPlaceholder(variable_name="messages"),
         ]
     )
-    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"))
-    generate = prompt | llm
+    # default is ReACT prompt
+    system_prompt = config["configurable"].get("system_prompt", Prompts.REACT)
+    partial_prompt = prompt.partial(system_prompt=system_prompt)
+    llm = ChatOpenAI()
+    generate = partial_prompt | llm
 
     try:
         return {"messages": [await generate.ainvoke({"messages": state["messages"]})], "rounds": 1}
@@ -108,7 +106,7 @@ async def reflection_node(state: State) -> Dict:
             MessagesPlaceholder(variable_name="messages"),
         ]
     )
-    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"))
+    llm = ChatOpenAI()
     reflect = reflection_prompt | llm
     # Other messages we need to adjust
     cls_map = {"ai": HumanMessage, "human": AIMessage}
@@ -161,7 +159,7 @@ def build_graph() -> CompiledStateGraph:
     builder.add_node("reflect", reflection_node)
     builder.add_node("end", end_node)
     builder.add_edge(START, "generate")
-    # builder.add_edge("end", END)
+    builder.add_edge("end", END)
 
     def should_continue(state: State) -> str:
         """
@@ -174,7 +172,7 @@ def build_graph() -> CompiledStateGraph:
             str: The name of the next node ('end' or 'reflect').
         """
         if state["rounds"] > MAX_ROUNDS:
-            return END
+            return "end"
         return "reflect"
 
     builder.add_conditional_edges("generate", should_continue)
@@ -270,7 +268,8 @@ async def main():
     load_dotenv()
     graph = build_graph()
     print("Welcome to the Reflection Chat! Type 'exit' to quit.\n")
-    config = {"configurable": {"thread_id": uuid.uuid4(), "color_map": build_color_map(graph)}}
+    config = {"configurable": {"thread_id": uuid.uuid4(), "color_map": build_color_map(graph),
+                               "system_prompt": Prompts.REACT}}
     try:
         while True:
             # Get user input
