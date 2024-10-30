@@ -58,6 +58,8 @@ async def generation_node(state: State) -> Dict:
     Notes:
         - Uses the ChatOpenAI model to generate the assistant's reply.
         - If an error occurs, logs the error and returns a default state.
+        - Prompt tells LLM to work off last answer, otherwise it constructs a mash up of previous answers
+        - Prompt tells LLM to not remove information, otherwise it adds but also removes. 
     """
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -66,8 +68,8 @@ async def generation_node(state: State) -> Dict:
                 "You are a helpful assistant engaged in critical work; attention to detail is essential."
                 " When the user provides critique, you will incorporate it into your last answer, keeping in mind: "
                 " 1. Always work off your last answer without collating information from previous attempts. "
-                " 2 - Do not remove information unless it is incorrect. "
-                " 3 - Ensure that the text flows smoothly and coherently. "
+                " 2. Do not remove information unless it is incorrect. "
+                " 3. Ensure that the text flows smoothly and coherently. "
                 "Always end your messages with a separating line followed by a final review of the work. ",
             ),
             MessagesPlaceholder(variable_name="messages"),
@@ -103,7 +105,7 @@ async def reflection_node(state: State) -> Dict:
                 "system",
                 "You are a critique assistant. Generate critique and recommendations for the user's submission."
                 "Provide detailed recommendations appropriate for the task. If no further improvement are "
-                "warranted, clearly state it",
+                "warranted, clearly state it. Do not nit pick",
             ),
             MessagesPlaceholder(variable_name="messages"),
         ]
