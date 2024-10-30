@@ -18,8 +18,6 @@ Thought: Conclude your reasoning and ensure you have arrived at a solution.
 Final Answer: Provide the final answer to the original question, incorporating all suggestions and reasoning from the
      previous steps. Ensure that the final answer is formatted so that each line does not exceed 80 characters.
 
-If the user provides critique or feedback, revise your previous response accordingly.
-
 Begin!
 
 Question: {input}}
