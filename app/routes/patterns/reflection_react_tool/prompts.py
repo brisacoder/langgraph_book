@@ -13,9 +13,7 @@ class Prompts:
     Tool output: the result of the tool call
     ... (this Thought/Action/Tool output can repeat N times)
     Thought: I now know the final answer
-    Final Answer: the final answer to the original input question
+    Final Answer: Provide the final answer to the original question incorporating all content from previous cycles. Ensure text is formatted to 80 columns.
 
     Begin!
-
-    Question: {input}
     """
