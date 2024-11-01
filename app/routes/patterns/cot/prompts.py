@@ -31,6 +31,8 @@ Instructions:
    the Chain-of-Thought reasoning observed in the examples to approach the main
    problem.
 
+Ensure text is formatted to 80 columns.
+
 Begin!
 
 """
