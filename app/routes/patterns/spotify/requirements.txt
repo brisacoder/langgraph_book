@@ -1,0 +1,8 @@
+langchain-community==0.3.4
+langchain-openai==0.2.5
+python-dotenv==1.0.1
+langchain-core==0.3.15
+langgraph==0.2.42
+colorama==0.4.6
+types-colorama==0.4.15.20240311
+spotipy=2.24.0

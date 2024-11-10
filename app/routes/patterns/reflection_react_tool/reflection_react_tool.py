@@ -207,7 +207,8 @@ def build_graph() -> CompiledStateGraph:
             last_message = messages[-1]
         else:
             raise ValueError(f"No messages found in input state to tool_edge: {state}")
-        if isinstance(last_message, AIMessage) and hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
+        if isinstance(last_message, AIMessage) and hasattr(last_message, "tool_calls") \
+                and len(last_message.tool_calls) > 0:
             return "tools"
         return "reflect"
 

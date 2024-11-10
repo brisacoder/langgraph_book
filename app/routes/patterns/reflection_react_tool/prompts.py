@@ -1,6 +1,6 @@
 class Prompts:
     REACT: str = """
-    Answer the following questions as best you can.
+    Answer the following question as best you can.
     You have access to a number of tools, use them to get the answer to the question.
 
     Reply in the following format:
