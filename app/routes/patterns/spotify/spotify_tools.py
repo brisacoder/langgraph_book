@@ -213,21 +213,25 @@ def filter_artists(playlist_id: str, new_artists: List[str]) -> Dict[str, List[s
 
 
 @tool
-def find_similar_artist(artist: SpotifyURI) -> List[Dict[Any, Any]]:
+def find_similar_artists(artists: List[SpotifyURI]) -> Set[SpotifyURI]:
     """
-    Find similar artists for a given Spotify artist URI. It returns a List of dictionaries. Each
-     list entry contains the artist name, URI and other information.
+    Find similar artists for a given a list of Spotify artists URIs. It returns a Set of SpotifyURIs. 
 
     Args:
-        artist (SpotifyURI): Spotify artist URI in the format spotify:artist:<base-62 number>
+        artists (List[SpotifyURI]): List of Spotify artists URIs in the format spotify:artist:<base-62 number>
 
     Returns:
-       List[Dict]: A list of Spotify artist dictionaries. Each list entry (dictionary) contains
-        the artist name, URI and other information.
+       Set[Dict]: A set of Spotify URIs.
     """
+
+    similar_artists: Set[SpotifyURI] = set()
     sp = get_spotify_client()
-    artists = sp.artist_related_artists(artist)
-    return artists["artists"]
+    for artist in artists:
+        for item in sp.artist_related_artists(artist)["artists"]:
+            uri = item["uri"]
+            if uri not in artists:
+                similar_artists.add(item["uri"])
+    return similar_artists
 
 
 @tool
