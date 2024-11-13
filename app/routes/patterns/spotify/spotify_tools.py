@@ -25,10 +25,11 @@ def get_spotify_client() -> spotipy.Spotify:
 @tool
 def get_playlists() -> Dict[str, List[Playlist]]:
     """
-    Retrieves all Spotify playlists for a user
+    Retrieves all Spotify playlists for a user. Each playlist includes the Spotify URI and other relevant data
 
     Returns:
-        Dict[str, List[Playlist]]: A dictionary containing a list of Playlist models under the 'playlists' key.
+        Dict[str, List[Playlist]]: A dictionary containing a aingle key `playlists` and a list of Playlist as value.
+            Each Playlist includes the Spotify URI and other relevant data
     """
     sp = get_spotify_client()
     playlists: List[Playlist] = []
@@ -208,19 +209,21 @@ def filter_artists(playlist_id: str, new_artists: List[str]) -> Dict[str, List[s
 
 
 @tool
-def find_similar_artist(artist: str):
+def find_similar_artist(artist: str) -> List[Dict[Any, Any]]:
     """
-    Find similar artists for a given Spotify artist URI
+    Find similar artists for a given Spotify artist URI. It return a List of dictionaries. Each 
+    list entry contains the artist name, URI and other information.
 
     Args:
         artist (SpotifyURI): Spotify artist URI in the format spotify:artist:<base-62 number>
 
     Returns:
-        Dict[str, Set[str]]: Artists that can be used in a new playlist
+       List[Dict]: A list of Spotify artist dictionaries. Each list entry (dictionary) contains
+        the artist name, URI and other information.
     """
     sp = get_spotify_client()
     artists = sp.artist_related_artists(artist)
-    return artists
+    return artists["artists"]
 
 
 @tool
@@ -235,8 +238,8 @@ def get_artists_from_playlist(playlist_id: SpotifyURI) -> Dict[str, Dict[str, Sp
         Dict[str, SpotifyURI]: A dictionary where keys are artist names and values are Spotity URIs
     """
     sp = get_spotify_client()
-    # playlist_artists: Dict[str, SpotifyURI] = {}
-    playlist_artists = {}
+    playlist_artists: Dict[str, SpotifyURI] = {}
+    # playlist_artists = {}
 
     try:
         # Fetch the playlist's tracks with pagination
