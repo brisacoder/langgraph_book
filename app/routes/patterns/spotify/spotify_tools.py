@@ -165,6 +165,7 @@ def create_spotify_playlist(name: str, description: str = "Agentic Playlist") ->
         return {"error": str(e)}
     return {"new_playlist": new_playlist.model_dump()}
 
+
 @tool
 def add_tracks_to_playlist(playlist_id: str, tracks: Tracks) -> Dict[str, Any]:
     """
@@ -223,7 +224,7 @@ def find_similar_artist(artist: str):
 
 
 @tool
-def get_artists_from_playlist(playlist_id: SpotifyURI) -> Dict[str, SpotifyURI]:
+def get_artists_from_playlist(playlist_id: SpotifyURI) -> Dict[str, Dict[str, SpotifyURI]]:
     """
     Get the list of unique artists from a Spotify playlist URI
 
@@ -231,10 +232,11 @@ def get_artists_from_playlist(playlist_id: SpotifyURI) -> Dict[str, SpotifyURI]:
         playlist_id (SpotifyURI): Spotify playlist URI in the format spotify:playlist:<base-62 number>
 
     Returns:
-        List[str]: A list of unique artists in a playlist
+        Dict[str, SpotifyURI]: A dictionary where keys are artist names and values are Spotity URIs
     """
     sp = get_spotify_client()
-    playlist_artists: Dict[str, str] = {}
+    # playlist_artists: Dict[str, SpotifyURI] = {}
+    playlist_artists = {}
 
     try:
         # Fetch the playlist's tracks with pagination
@@ -246,7 +248,7 @@ def get_artists_from_playlist(playlist_id: SpotifyURI) -> Dict[str, SpotifyURI]:
                     track_data = item['track']
                     # Map API data to the Track model
                     for artist in track_data['artists']:
-                        playlist_artists[artist] = artist["uri"]
+                        playlist_artists[artist['name']] = artist["uri"]
                 # Check if there is a next page
                 if tracks['next']:
                     # TODO unclear in this case
@@ -254,7 +256,7 @@ def get_artists_from_playlist(playlist_id: SpotifyURI) -> Dict[str, SpotifyURI]:
                 else:
                     break
     except spotipy.SpotifyException as e:
-        return {"error": set(str(e))}
+        return {"artists": {"error": str(e)}}
 
     # Save state
     state = get_state()
