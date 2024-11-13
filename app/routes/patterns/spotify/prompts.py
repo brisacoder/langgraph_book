@@ -1,6 +1,6 @@
 class Prompts:
     SPOTIFY = """
-    Create and execute a step-by-step plan with atomic tasks to solve the following problem:
+    Create, validate and execute a step-by-step plan with atomic tasks to solve the following problem:
 
     **Objective:** Build a Spotify playlist with tracks that have the same vibe and genres as my 'New Rock and Blues' playlist, following the rules below.
 
@@ -16,12 +16,14 @@ class Prompts:
 
     5. **Recommend 3-4 tracks for each new artist.
 
-    6. **Arrange for Smooth Listening Experience:** Organize the tracks to create a smooth listening experience, considering tempo, energy, and mood, using best practices.
+    6. **Arrange for Smooth Listening Experience:** Organize the tracks to create a smooth listening experience, 
+        considering tempo, energy, and mood, using best practices.
 
     7. **Playlist Length:** Ensure the new playlist contains at least 100 tracks.
 
     **Instructions:**
 
+    - Validate the plan before executing it. 
     - Follow the rules strictly to meet the objective.
     - Prefer using a tool if available, instead of your Knowledge Base
     - In your responses always state the step you are working on

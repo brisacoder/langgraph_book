@@ -125,7 +125,7 @@ def get_track_list(playlist_id: SpotifyURI) -> Dict[str, List[Track]]:
 
 
 @tool
-def create_spotify_playlist(name: str, description: str = "Agentic Playlist") -> Dict[str, Playlist]:
+def create_spotify_playlist(name: str, description: str) -> Dict[str, Playlist]:
     """
     Creates a new playlist on Spotify.
 
@@ -134,11 +134,15 @@ def create_spotify_playlist(name: str, description: str = "Agentic Playlist") ->
 
     Args:
         name (str): The name of the new playlist.
-        description (str, optional): The description of the playlist.
+        description (str): The description of the playlist.
 
     Returns:
         Dict[str, Playlist]: A dictionary containing the new Playlist model under the 'new_playlist' key.
     """
+
+    if description is None:
+        description = "Agentic Playlist"
+
     sp = get_spotify_client()
     try:
         # Create a new playlist
@@ -209,10 +213,10 @@ def filter_artists(playlist_id: str, new_artists: List[str]) -> Dict[str, List[s
 
 
 @tool
-def find_similar_artist(artist: str) -> List[Dict[Any, Any]]:
+def find_similar_artist(artist: SpotifyURI) -> List[Dict[Any, Any]]:
     """
-    Find similar artists for a given Spotify artist URI. It return a List of dictionaries. Each 
-    list entry contains the artist name, URI and other information.
+    Find similar artists for a given Spotify artist URI. It returns a List of dictionaries. Each
+     list entry contains the artist name, URI and other information.
 
     Args:
         artist (SpotifyURI): Spotify artist URI in the format spotify:artist:<base-62 number>
@@ -235,11 +239,10 @@ def get_artists_from_playlist(playlist_id: SpotifyURI) -> Dict[str, Dict[str, Sp
         playlist_id (SpotifyURI): Spotify playlist URI in the format spotify:playlist:<base-62 number>
 
     Returns:
-        Dict[str, SpotifyURI]: A dictionary where keys are artist names and values are Spotity URIs
+        Dict[str, SpotifyURI]: A dictionary where keys=artist name and value=URI
     """
     sp = get_spotify_client()
     playlist_artists: Dict[str, SpotifyURI] = {}
-    # playlist_artists = {}
 
     try:
         # Fetch the playlist's tracks with pagination
