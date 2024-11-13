@@ -246,7 +246,7 @@ def get_artists_from_playlist(playlist_id: SpotifyURI) -> Dict[str, SpotifyURI]:
                     track_data = item['track']
                     # Map API data to the Track model
                     for artist in track_data['artists']:
-                        playlist_artists[artist] = "dummy"
+                        playlist_artists[artist] = artist["uri"]
                 # Check if there is a next page
                 if tracks['next']:
                     # TODO unclear in this case
