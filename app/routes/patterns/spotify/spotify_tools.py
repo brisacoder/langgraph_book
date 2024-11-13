@@ -182,7 +182,7 @@ def add_tracks_to_playlist(playlist_id: str, tracks: Tracks) -> Dict[str, Any]:
         sp.playlist_add_items(playlist_id=playlist_id, items=tracks)
     except spotipy.SpotifyException as e:
         return {"error": str(e)}
-    return {"success": True} 
+    return {"success": True}
 
 
 @tool
@@ -223,7 +223,7 @@ def find_similar_artist(artist: str):
 
 
 @tool
-def get_artists_from_playlist(playlist_id: SpotifyURI) -> Dict[str, Set[str]]:
+def get_artists_from_playlist(playlist_id: SpotifyURI) -> Dict[str, SpotifyURI]:
     """
     Get the list of unique artists from a Spotify playlist URI
 
@@ -234,7 +234,7 @@ def get_artists_from_playlist(playlist_id: SpotifyURI) -> Dict[str, Set[str]]:
         List[str]: A list of unique artists in a playlist
     """
     sp = get_spotify_client()
-    playlist_artists: Set[str] = set()
+    playlist_artists: Dict[str, str] = {}
 
     try:
         # Fetch the playlist's tracks with pagination
@@ -245,7 +245,8 @@ def get_artists_from_playlist(playlist_id: SpotifyURI) -> Dict[str, Set[str]]:
                 for item in tracks['items']:
                     track_data = item['track']
                     # Map API data to the Track model
-                    [playlist_artists.add(artist['name']) for artist in track_data['artists']]
+                    for artist in track_data['artists']:
+                        playlist_artists[artist] = "dummy"
                 # Check if there is a next page
                 if tracks['next']:
                     # TODO unclear in this case
