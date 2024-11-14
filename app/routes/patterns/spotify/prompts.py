@@ -2,7 +2,8 @@ class Prompts:
     SPOTIFY = """
     Create, validate and execute a step-by-step plan with atomic tasks to solve the following problem:
 
-    **Objective:** Build a Spotify playlist with tracks that have the same vibe and genres as my 'New Rock and Blues' playlist, following the rules below.
+    **Objective:** Build a Spotify playlist with tracks that have the same vibe and genres as my 'New Rock and Blues' 
+        playlist, following the rules below.
 
     **Rules:**
 
@@ -12,7 +13,8 @@ class Prompts:
 
     3. **Focus on Post-2010 Success:** Only include tracks from artists who achieved success after the year 2010.
 
-    4. **Minimum Number of New Artists:** Include tracks from at least 40 different artists not present in the 'New Rock and Blues' playlist.
+    4. **Minimum Number of New Artists:** Include tracks from at least 40 different artists not present in 
+        the 'New Rock and Blues' playlist.
 
     5. **Recommend 3-4 tracks for each new artist.
 
@@ -23,7 +25,7 @@ class Prompts:
 
     **Instructions:**
 
-    - Validate the plan before executing it. 
+    - You must validate the plan before start working on it.
     - Follow the rules strictly to meet the objective.
     - Prefer using a tool if available, instead of your Knowledge Base
     - In your responses always state the step you are working on

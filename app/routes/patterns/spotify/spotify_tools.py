@@ -70,7 +70,7 @@ def get_playlists() -> Dict[str, List[Playlist]]:
 
 
 @tool
-def get_track_list(playlist_id: SpotifyURI) -> Dict[str, List[Track]]:
+def get_track_list_from_playlist(playlist_id: SpotifyURI) -> Dict[str, List[Track]]:
     """
     Retrieves the track list for a specific Spotify playlist.
 
@@ -232,6 +232,28 @@ def find_similar_artists(artists: List[SpotifyURI]) -> Set[SpotifyURI]:
             if uri not in artists:
                 similar_artists.add(item["uri"])
     return similar_artists
+
+
+@tool
+def find_top_tracks(artists: List[SpotifyURI]) -> List[SpotifyURI]:
+    """
+    Find top tracks for a list of Spotify artists URIs.
+
+    Args:
+        artists (List[SpotifyURI]): List of Spotify artists URIs in the format spotify:artist:<base-62 number>
+
+    Returns:
+       Set[Dict]: A set of Spotify URIs.
+    """
+
+    tracks: List[SpotifyURI] = []
+    sp = get_spotify_client()
+    for artist in artists:
+        top_tracks = sp.artist_top_tracks(artist, country='US')
+        for track in top_tracks["tracks"]:
+            uri = track["uri"]
+            tracks.append(uri)
+    return tracks
 
 
 @tool
