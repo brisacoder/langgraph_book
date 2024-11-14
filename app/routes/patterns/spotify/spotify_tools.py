@@ -22,6 +22,53 @@ def get_spotify_client() -> spotipy.Spotify:
     return spotipy.Spotify(auth_manager=auth_manager)
 
 
+# @tool
+# def get_playlists() -> Dict[str, List[Playlist]]:
+#     """
+#     Retrieves all Spotify playlists for a user. Each playlist includes the Spotify URI and other relevant data
+
+#     Returns:
+#         Dict[str, List[Playlist]]: A dictionary containing a aingle key `playlists` and a list of Playlist as value.
+#             Each Playlist includes the Spotify URI and other relevant data
+#     """
+#     sp = get_spotify_client()
+#     playlists: List[Playlist] = []
+
+#     try:
+#         # Fetch the current user's playlists with pagination
+#         playlists_raw = sp.user_playlists(user=os.getenv("SPOTIFY_USER_ID"), limit=100)
+#         while playlists_raw:
+#             for playlist_data in playlists_raw['items']:
+#                 # Map API data to the Playlist model
+#                 playlist = Playlist(
+#                     id=playlist_data['id'],
+#                     uri=playlist_data['uri'],
+#                     name=playlist_data['name'],
+#                     description=playlist_data.get('description'),
+#                     owner=playlist_data['owner']['display_name'],
+#                     tracks_total=playlist_data['tracks']['total'],
+#                     is_public=playlist_data.get('public'),
+#                     collaborative=playlist_data.get('collaborative'),
+#                     snapshot_id=playlist_data.get('snapshot_id')
+#                 )
+#                 playlists.append(playlist)
+#             # Check if there is a next page
+#             if playlists_raw['next']:
+#                 playlists_raw = sp.next(playlists_raw)
+#             else:
+#                 break
+#     except spotipy.SpotifyException as e:
+#         return {"error": [str(e)]}
+
+#     # Save state
+#     state: (State) = get_state()
+#     state["playlists"] = playlists
+
+#     # Serialize the playlists to JSON-serializable dictionaries
+#     serialized_playlists = [playlist.model_dump() for playlist in playlists]
+#     return {"playlists": serialized_playlists}
+
+
 @tool
 def get_playlists() -> Dict[str, List[Playlist]]:
     """
@@ -41,15 +88,8 @@ def get_playlists() -> Dict[str, List[Playlist]]:
             for playlist_data in playlists_raw['items']:
                 # Map API data to the Playlist model
                 playlist = Playlist(
-                    id=playlist_data['id'],
                     uri=playlist_data['uri'],
                     name=playlist_data['name'],
-                    description=playlist_data.get('description'),
-                    owner=playlist_data['owner']['display_name'],
-                    tracks_total=playlist_data['tracks']['total'],
-                    is_public=playlist_data.get('public'),
-                    collaborative=playlist_data.get('collaborative'),
-                    snapshot_id=playlist_data.get('snapshot_id')
                 )
                 playlists.append(playlist)
             # Check if there is a next page

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, Field
 from langchain_core.tools import tool
 
@@ -11,26 +11,33 @@ class Step(BaseModel):
     - A task should perform one specific function and should not combine different activities. 
     - Each task should have a clear, verifiable success criterion that is achievable through the task's activities alone.
     - Steps must be URL-friendly, without spaces or special characters in their names.
-    
-    **Examples of What a Task Should NOT Do:**
+ 
+    **Examples of What a Step Should NOT Do:**
     - "Create a playlist and add tracks" (This task mixes playlist creation with track management.)
     - "Search new artists and apply filtering." (This task combines artist search with its management, which should be separated.)
     - "Collect all relevant information about the playlist Spotify and User" (This task has two action items)
 
     Attributes:
-    - `name` (str): URL-friendly name for the task, e.g., 'deploy-application'. Must not contain spaces or special characters.
-    - `description` (str): A detailed description of the task, e.g., 'Deploy the application to the Kubernetes cluster using Helm.'
-    - `success_criteria` (str): Clear and verifiable criteria for task completion, e.g., 'Application is successfully deployed and running in the Kubernetes cluster, as verified by checking the deployment status with 'kubectl get deployments'.' Each task must be atomic and focus on one thing only.
-    - `tool` (str): "A `Tool` instance required for the task".
-    - `action`: str = Field(..., description="Action decription in plain english. It should be one of Tool Calling or Knowledge base")
-
-
+    - `step_number` (int): The sequential number of the step in the plan.
+    - `name` (str): URL-friendly name for the step, e.g., 'deploy-application'. Must not contain spaces or special characters.
+    - `type` (str): The type of step. Possible values are 'action', 'loop', 'branch', 'parallel'.
+    - `description` (str): A detailed description of the step.
+    - `success_criteria` (str): Clear and verifiable criteria for step completion.
+    - `tool` (Optional[str]): A `Tool` instance required for the step, if applicable.
+    - `action` (Optional[str]): Action description in plain English. Should be a tool call or knowledge base usage.
+    - `condition` (Optional[str]): Condition expression for loops and branches.
+    - `substeps` (Optional[List['Step']]): Nested steps for loops, branches, or parallel execution.
     """
+
+    step_number: int = Field(..., description="The sequential number of the step in the plan.")
     name: str = Field(..., description="URL-friendly name for the task, e.g., 'deploy-application'. Must not contain spaces or special characters.")
-    description: str = Field(..., description="A detailed description of the task, e.g., 'Deploy the application to the Kubernetes cluster using Helm.'")
-    success_criteria: str = Field(..., description="Clear and verifiable criteria for task completion, e.g., 'Application is successfully deployed and running in the Kubernetes cluster, as verified by checking the deployment status with 'kubectl get deployments'.' Each task must be atomic and focus on one thing only.")
-    tool: str = Field(..., description="A `Tool` instance required for the task")
-    action: str = Field(..., description="Action decription in plain english. It should be one of Tool Calling or Knowledge base")
+    type: str = Field(..., description="Type of the step. Possible values: 'action', 'loop', 'branch', 'parallel'.")
+    description: str = Field(..., description="A detailed description of the task")
+    success_criteria: str = Field(..., description="Clear and verifiable criteria for task completion")
+    tool: Optional[str] = Field(default=None, description="A `Tool` instance required for the step, if applicable.")
+    action: Optional[str] = Field(default=None, description="Action description in plain English.")
+    condition: Optional[str] = Field(default=None, description="Condition expression for loops and branches.")
+    substeps: Optional[List['Step']] = Field(default=None, description="Nested steps for loops, branches, or parallel execution.")
 
     class Config:
         """Configuration for the Task model."""
@@ -42,15 +49,16 @@ class Step(BaseModel):
 
 class Plan(BaseModel):
     steps: List[Step] = Field(
-        ..., 
+        ...,
         description=(
-            "A list of `Steps` that constitute the plan. Each step must be atomic, "
+            "List of steps constituting the plan, supporting advanced planning structures. Each step (or sub-step as "
+            " applicable) must be atomic, "
             "focused on a specific goal, and the entire plan must be complete, verifiable, "
             "and reproducible."
         )
     )
     Reasoning: str = Field(
-        ..., 
+        ...,
         description=(
             "OpenAI should capture here the entire reasoning sequence used to create "
             " the plan"
