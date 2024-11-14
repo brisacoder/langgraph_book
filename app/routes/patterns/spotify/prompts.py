@@ -2,11 +2,11 @@ class Prompts:
     SPOTIFY = """
     Create, validate, and execute a step-by-step plan with atomic tasks to solve the following problem:
 
-    **Objective:** Build a Spotify playlist with tracks that have the same vibe and genres as my 'New Rock and Blues' playlist, following the rules below.
+    **Objective:** Build a Spotify playlist with tracks that have the same vibe and genres as the playlist named 'New Rock and Blues', following the rules below.
 
     **Rules:**
 
-    1. **For each artist in the 'New Rock and Blues' playlist, find 3+ artists of a similar music style.** *Ensure that you process all artists, even if it requires multiple iterations or tool calls due to API limitations.*
+    1. **For each artist in the 'New Rock and Blues' playlist, find 3-4 artists of a similar music style.** *Ensure that you process all artists, even if it requires multiple iterations or tool calls due to API limitations.*
 
     2. **Remove from the new artist list those that are already present in the 'New Rock and Blues' Playlist.**
 
@@ -14,7 +14,7 @@ class Prompts:
 
     4. **Minimum Number of New Artists:** Include tracks from at least 40 different artists not present in the 'New Rock and Blues' playlist.
 
-    5. **Recommend 3-4 tracks for each new artist.**
+    5. **Recommend 3+ tracks for each new artist.**
 
     6. **Arrange for Smooth Listening Experience:** Organize the tracks to create a smooth listening experience, considering tempo, energy, and mood, using best practices.
 
@@ -51,5 +51,3 @@ class Prompts:
 
     Your goal is to execute tasks with high accuracy and completeness, ensuring that the user's needs are fully met.
     """
-
-

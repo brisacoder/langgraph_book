@@ -2,20 +2,28 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
-# Define a Pydantic model for Playlist
+# # Define a Pydantic model for Playlist
+# class Playlist(BaseModel):
+#     """
+#     A model representing a Spotify playlist.
+#     """
+#     id: str = Field(..., description="The unique identifier for the playlist.")
+#     uri: str = Field(..., description="The Spotify URI for the playlist.")
+#     name: str = Field(..., description="The name of the playlist.")
+#     description: Optional[str] = Field(description="The playlist's description.")
+#     owner: Optional[str] = Field(description="The display name of the playlist's owner.")
+#     tracks_total: Optional[int] = Field(description="The total number of tracks in the playlist.")
+#     is_public: Optional[bool] = Field(description="Indicates if the playlist is public.")
+#     collaborative: Optional[bool] = Field(description="Indicates if the playlist is collaborative.")
+#     snapshot_id: Optional[str] = Field(description="The version identifier for the current playlist.")
+
+
 class Playlist(BaseModel):
     """
     A model representing a Spotify playlist.
     """
-    id: str = Field(..., description="The unique identifier for the playlist.")
     uri: str = Field(..., description="The Spotify URI for the playlist.")
     name: str = Field(..., description="The name of the playlist.")
-    description: Optional[str] = Field(description="The playlist's description.")
-    owner: Optional[str] = Field(description="The display name of the playlist's owner.")
-    tracks_total: Optional[int] = Field(description="The total number of tracks in the playlist.")
-    is_public: Optional[bool] = Field(description="Indicates if the playlist is public.")
-    collaborative: Optional[bool] = Field(description="Indicates if the playlist is collaborative.")
-    snapshot_id: Optional[str] = Field(description="The version identifier for the current playlist.")
 
 
 # Define a Pydantic model for Track
