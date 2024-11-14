@@ -6,7 +6,7 @@ class Prompts:
 
     **Rules:**
 
-    1. **For each artist in the 'New Rock and Blues' playlist, find 3-4 artists of a similar music style.** *Ensure that you process all artists, even if it requires multiple iterations or tool calls due to API limitations.*
+    1. **For each artist in the 'New Rock and Blues' playlist, find 3+ artists of a similar music style.** *Ensure that you process all artists, even if it requires multiple iterations or tool calls due to API limitations.*
 
     2. **Remove from the new artist list those that are already present in the 'New Rock and Blues' Playlist.**
 
