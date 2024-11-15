@@ -1,11 +1,23 @@
 import os
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy.oauth2 import SpotifyOAuth
 from langchain_core.tools import tool
 from typing import Any, List, Set, Dict
 from state import State, get_state
 from spotify_model import Playlist, Track, Tracks
 from spotify_types import SpotifyID
+
+
+def get_spotify_user_authorization() -> spotipy.Spotify:
+    scopes = "user-library-modify, playlist-modify-private, playlist-modify-public"
+
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scopes, open_browser=False,
+                         client_id=os.environ.get("SPOTIFY_CLIENT_ID"),
+                         client_secret=os.environ.get("SPOTIFY_CLIENT_SECRET"),
+                         redirect_uri=os.environ.get("SPOTIFY_REDIRECT_URI")))
+
+    return sp
 
 
 def get_spotify_client() -> spotipy.Spotify:
@@ -182,7 +194,7 @@ def create_spotify_playlist(name: str, description: str) -> Dict[str, Any]:
     if description is None:
         description = "Agentic Playlist"
 
-    sp = get_spotify_client()
+    sp = get_spotify_user_authorization()
     try:
         # Create a new playlist
         new_playlist_data = sp.user_playlist_create(
@@ -211,13 +223,13 @@ def create_spotify_playlist(name: str, description: str) -> Dict[str, Any]:
 
 
 @tool
-def add_tracks_to_playlist(playlist_id: str, tracks: Tracks) -> Dict[str, Any]:
+def add_tracks_to_playlist(playlist_id: SpotifyID, tracks: List[SpotifyID]) -> Dict[str, Any]:
     """
     Adds tracks to a Spotify playlist.
 
     Args:
-        playlist_id (str): Spotify ID of the playlist.
-        tracks (Tracks): List of tracks
+        playlist_id (SpotifyID): Spotify ID of the playlist.
+        tracks (List[SpotifyID]): List of Spotify ID tracks
 
     Returns:
         Dict[str, Any]: A dictionary indicating success or error.
@@ -231,21 +243,21 @@ def add_tracks_to_playlist(playlist_id: str, tracks: Tracks) -> Dict[str, Any]:
 
 
 @tool
-def filter_artists(playlist_id: str, new_artists: List[str]) -> Set[SpotifyID]:
+def filter_artists(playlist_id: SpotifyID, new_artists: List[SpotifyID]) -> Set[SpotifyID]:
     """
-    Checks `new-artists` against an existing Playlist. It returns a set
+    Checks `new_artists` against an existing Playlist. It returns a set
      of artists that can be used in a new playlist.
 
     In essense it will perform set operation `new-artists` - `existing-artists`
     Args:
-        playlist_id (SpotifyURI): Spotify playlist URI in the format spotify:playlist:<base-62 number>
-        new_artists (List[str]): A list of potential artist names
+        playlist_id (SpotifyID): Spotify playlist ID in the format <base-62 number>
+        new_artists (List[SpotifyID]): List of artists Spotify IDs
 
     Returns:
-        Dict[str, Set[str]]: Artists that can be used in a new playlist
+        Dict[str, Set[SpotifyID]]: List of artists Spotify IDs that can be used in a new playlist
     """
     state: State = get_state()
-    artists: Set[SpotifyURI] = set()
+    artists: Set[SpotifyID] = set()
     state['candidate_artists'] = set(new_artists)
     for v in state["artists"].keys():
         artists.add(v)
