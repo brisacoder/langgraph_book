@@ -3,7 +3,7 @@ from typing_extensions import TypedDict
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 from spotify_model import Playlist, Track
-from spotify_uri import SpotifyURI
+from spotify_types import SpotifyID
 
 
 class State(TypedDict, total=False):
@@ -22,7 +22,7 @@ class State(TypedDict, total=False):
     candidate_artists: Set[str]
     playlists: List[Playlist]
     tracks: List[Track]
-    artists: Dict[str, SpotifyURI]
+    artists: Dict[SpotifyID, str]
     messages: Annotated[List[BaseMessage], add_messages]
 
 

@@ -1,6 +1,6 @@
 from typing import List, Optional
 from pydantic import BaseModel, Field
-
+from spotify_types import SpotifyID, SpotifyURI
 
 # # Define a Pydantic model for Playlist
 # class Playlist(BaseModel):
@@ -22,7 +22,7 @@ class Playlist(BaseModel):
     """
     A model representing a Spotify playlist.
     """
-    uri: str = Field(..., description="The Spotify URI for the playlist.")
+    id: SpotifyID = Field(..., description="The unique identifier for the playlist.")
     name: str = Field(..., description="The name of the playlist.")
 
 
@@ -31,8 +31,8 @@ class Track(BaseModel):
     """
     A model representing a Spotify track.
     """
-    id: str = Field(..., description="The unique identifier for the track.")
-    uri: str = Field(..., description="The Spotify URI for the track.")
+    id: SpotifyID = Field(..., description="The unique identifier for the track.")
+    uri: SpotifyURI = Field(..., description="The Spotify URI for the track.")
     name: str = Field(..., description="The name of the track.")
     artists: List[str] = Field(..., description="A list of artists who performed the track.")
     album: str = Field(..., description="The name of the album the track is from.")
