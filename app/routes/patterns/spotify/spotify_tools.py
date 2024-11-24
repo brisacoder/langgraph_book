@@ -12,7 +12,7 @@ from spotify_types import SpotifyID
 def get_spotify_user_authorization() -> spotipy.Spotify:
     scopes = "user-library-modify, playlist-modify-private, playlist-modify-public"
 
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scopes, open_browser=False,
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scopes,
                          client_id=os.environ.get("SPOTIFY_CLIENT_ID"),
                          client_secret=os.environ.get("SPOTIFY_CLIENT_SECRET"),
                          redirect_uri=os.environ.get("SPOTIFY_REDIRECT_URI")))
@@ -176,6 +176,23 @@ def get_track_list_from_playlist(playlist_id: SpotifyID) -> List[Dict[str, Any]]
 
 
 @tool
+def get_audio_features(tracks: List[SpotifyID]):
+    """
+    Get audio features such as acousticness, danceability, energy, instrumentalness, tempo and valence.
+
+    Args:
+        tracks - a list of Spotify IDs
+
+    Returns:
+        Dict[str, Any]: Dictionary representing tracks audio features
+    """
+
+    sp = get_spotify_client()
+    audio_features = sp.audio_features(tracks)
+    return audio_features
+
+
+@tool
 def create_spotify_playlist(name: str, description: str) -> Dict[str, Any]:
     """
     Creates a new playlist on Spotify.
@@ -282,12 +299,14 @@ def find_similar_artists(artists: List[SpotifyID]) -> Set[SpotifyID]:
     sp = get_spotify_client()
     for artist in artists:
         try:
-            for item in sp.artist_related_artists(artist)["artists"]:
-                id = item["id"]
-                if id not in artists:
-                    similar_artists.add(item["id"])
+            related_artists = sp.artist_related_artists(artist)["artists"]
         except Exception as e:
-            print(f"{str(e)}")
+            print(f"Unexpected error for artist {artist}: {str(e)}")
+            continue
+        for item in related_artists:
+            id = item.get("id")
+            if id and id not in artists:
+                similar_artists.add(id)
     return similar_artists
 
 
