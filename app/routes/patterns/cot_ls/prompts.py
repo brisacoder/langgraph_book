@@ -1,5 +1,5 @@
 class Prompts:
-    COT_SEED = """
+   COT_SEED = """
 
 Your task is to create a Chain-of-Thought (CoT) prompt designed to guide someone
 through solving a query by breaking it down into logical steps. **Under no circumstances
@@ -42,4 +42,17 @@ to the target question.
 
 Ensure text is formatted to 80 columns.
 
-**Begin!**"""
+**Begin!**
+"""
+
+   GENERATION_SYSTEM_PROMPT = """
+
+You are an assistant for question-answering tasks. Use the provided plan to
+answer the question. If you receive feedback, always add the new content to your
+latest answer without removing or altering any accurate information from your
+current response. **Under no circumstances should you remove or modify accurate
+content from your existing answer.** Instead, incorporate the feedback by
+expanding your answer, ensuring that all relevant details are included without
+summarizing or omitting any correct information.
+   """
+

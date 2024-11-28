@@ -97,17 +97,16 @@ async def generation_node(state: State, config: RunnableConfig) -> Dict:
     """
     prompt = ChatPromptTemplate(
         [
-            ("system", "You are an assistant for question-answering tasks. "
-             "Use the provided plan to answer the question. If you get feedback, always add content to "
-             "your latest answer. "
-             "**Under no circumstances you should remove accurate content from your current answer**"),
+            ("system", "{system_prompt}"),
             ("human", "Question: {question}\nPlan: {plan}"),  # Formatted message
             MessagesPlaceholder(variable_name="messages")
         ]
     )
     # default is prompt to generate a CoT prompt
+    system_prompt = Prompts.GENERATION_SYSTEM_PROMPT
+    partial_prompt = prompt.partial(system_prompt=system_prompt)
     llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"))
-    generate = prompt | llm
+    generate = partial_prompt | llm
 
     try:
         question = state["messages"][0]
