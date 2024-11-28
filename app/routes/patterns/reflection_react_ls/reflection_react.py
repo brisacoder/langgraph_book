@@ -14,7 +14,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import TypedDict
 from prompts import Prompts  # type: ignore
 
-MAX_ROUNDS = 3
+MAX_ROUNDS = 2
 
 
 def default_state() -> Dict:
@@ -65,7 +65,6 @@ async def generation_node(state: State, config: RunnableConfig) -> Dict:
         ]
     )
     # default is ReACT prompt
-    # system_prompt = config["configurable"].get("system_prompt", Prompts.REACT)
     system_prompt = Prompts.REACT
     partial_prompt = prompt.partial(system_prompt=system_prompt)
     llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"))

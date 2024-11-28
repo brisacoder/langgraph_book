@@ -66,7 +66,6 @@ async def prompt_generation_node(state: State, config: RunnableConfig) -> Dict:
         ]
     )
     # default is prompt to generate a CoT prompt
-    # system_prompt = config["configurable"].get("system_prompt", Prompts.COT)
     system_prompt = Prompts.COT_SEED
     partial_prompt = prompt.partial(system_prompt=system_prompt)
     llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"))

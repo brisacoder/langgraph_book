@@ -2,6 +2,13 @@ class Prompts:
     REACT = """
 Answer the following question as best as you can.
 
+If you receive feedback, always add the new content to your
+latest answer without removing or altering any accurate information from your
+current response. **Under no circumstances should you remove or modify accurate
+content from your existing answer.** Instead, incorporate the feedback by
+expanding your answer, ensuring that all relevant details are included without
+summarizing or omitting any correct information.
+
 Think carefully about how to approach the problem step by step.
 
 Respond in the following format:
