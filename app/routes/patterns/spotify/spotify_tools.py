@@ -4,6 +4,8 @@ from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
 from langchain_core.tools import tool
 from typing import Any, List, Set, Dict
+
+from tenacity import retry, stop_after_attempt, wait_random_exponential
 from state import State, get_state
 from spotify_model import Playlist, Track, Tracks
 from spotify_types import SpotifyID
@@ -176,6 +178,7 @@ def get_track_list_from_playlist(playlist_id: SpotifyID) -> List[Dict[str, Any]]
 
 
 @tool
+@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
 def get_audio_features(tracks: List[SpotifyID]):
     """
     Get audio features such as acousticness, danceability, energy, instrumentalness, tempo and valence.
@@ -284,7 +287,7 @@ def filter_artists(playlist_id: SpotifyID, new_artists: List[SpotifyID]) -> Set[
 
 
 @tool
-def find_similar_artists(artists: List[SpotifyID]) -> Set[SpotifyID]:
+def find_similar_artists(artists: List[SpotifyID]) -> Dict[SpotifyID, str]:
     """
     Find similar artists for a given a list of Spotify artists IDs.
 
@@ -295,7 +298,7 @@ def find_similar_artists(artists: List[SpotifyID]) -> Set[SpotifyID]:
        Set[SpotifyID]: A set of Spotify IDs.
     """
 
-    similar_artists: Set[SpotifyID] = set()
+    similar_artists: Dict[SpotifyID, str] = {}
     sp = get_spotify_client()
     for artist in artists:
         try:
@@ -306,7 +309,7 @@ def find_similar_artists(artists: List[SpotifyID]) -> Set[SpotifyID]:
         for item in related_artists:
             id = item.get("id")
             if id and id not in artists:
-                similar_artists.add(id)
+                similar_artists[id] = item.get("name")
     return similar_artists
 
 
@@ -330,7 +333,8 @@ def find_top_tracks(artists: List[SpotifyID]) -> List[SpotifyID]:
             for track in top_tracks["tracks"]:
                 tracks.append(track["id"])
         except Exception as e:
-            print(f"{str(e)}")
+            print(f"Unexpected error for artist {artist}: {str(e)}")
+            continue
     return tracks
 
 
