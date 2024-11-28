@@ -1,7 +1,6 @@
-langchain-community==0.3.4
-langchain-openai==0.2.5
+langchain-community==0.3.8
+langchain-openai==0.2.10
 python-dotenv==1.0.1
-langchain-core==0.3.15
-langgraph==0.2.42
-colorama==0.4.6
-types-colorama==0.4.15.20240311
+langchain-core==0.3.21
+langgraph==0.2.53
+

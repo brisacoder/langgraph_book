@@ -1,0 +1,7 @@
+{
+    "dependencies": ["."],
+    "graphs": {
+        "reflection_react_tool": "./reflection_react_tool.py:build_graph"
+    },
+    "env": "./.env"
+}
