@@ -14,7 +14,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import TypedDict
 from prompts import Prompts
 
-MAX_ROUNDS = 1
+MAX_ROUNDS = 3
 
 
 def default_state() -> Dict:
