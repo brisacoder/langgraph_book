@@ -97,7 +97,9 @@ async def generation_node(state: State, config: RunnableConfig) -> Dict:
     """
     prompt = ChatPromptTemplate(
         [
-            ("system", "You are an assistant for question-answering tasks. Use the provided plan to answer the question"),
+            ("system", "You are an assistant for question-answering tasks. "
+             "Use the provided plan to answer the question. If you get feedback, always work off your latest answer "
+             "instead of mix and matching previous answers."),
             ("human", "Question: {question}\nPlan: {plan}"),  # Formatted message
             MessagesPlaceholder(variable_name="messages")
         ]
