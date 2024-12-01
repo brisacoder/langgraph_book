@@ -1,0 +1,9 @@
+langchain-community==0.3.8
+langchain-openai==0.2.10
+python-dotenv==1.0.1
+langchain-core==0.3.21
+langgraph==0.2.53
+spotipy==2.24.0
+langsmith==0.1.147
+pydantic==2.10.2
+tenacity==9.0.0
