@@ -24,6 +24,7 @@ class State(TypedDict, total=False):
     tracks: List[Track]
     artists: Dict[SpotifyID, str]
     messages: Annotated[List[BaseMessage], add_messages]
+    spotify_prompt: str
 
 
 state: State = State()

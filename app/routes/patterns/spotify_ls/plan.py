@@ -12,17 +12,9 @@ class SubStep(BaseModel):
     type: str = Field(..., description="Type of the sub-step. Possible values: 'action', 'branch', 'parallel'.")
     description: str = Field(..., description="A detailed description of the sub-step.")
     success_criteria: str = Field(..., description="Clear and verifiable criteria for sub-step completion.")
-    tool: Optional[str] = Field(description="A `Tool` instance required for the sub-step, if applicable.")
-    action: Optional[str] = Field(description="Action description in plain English.")
-    condition: Optional[str] = Field(description="Condition expression for branches.")
-    # Exclude substeps to avoid recursion
-
-    # class Config:
-    #     """Configuration for the SubStep model."""
-    #     json_schema_extra = {
-    #         "description": "The `SubStepStep` class represents an atomic unit of work that involves using specific tools to achieve a clear goal."
-    #         # Removed 'examples' as it is now handled at the field level
-    #     }
+    tool: Optional[str] = Field(default=None, description="A `Tool` instance required for the sub-step, if applicable.")
+    action: Optional[str] = Field(default=None, description="Action description in plain English.")
+    condition: Optional[str] = Field(default=None, description="Condition expression for branches.")
 
     model_config = {
         "extra": "forbid",
@@ -63,17 +55,10 @@ class Step(BaseModel):
     type: str = Field(..., description="Type of the step. Possible values: 'action', 'loop', 'branch', 'parallel'.")
     description: str = Field(..., description="A detailed description of the task")
     success_criteria: str = Field(..., description="Clear and verifiable criteria for task completion")    
-    tool: Optional[str] = Field(description="A `Tool` instance required for the step, if applicable.")
-    action: Optional[str] = Field(description="Action description in plain English.")
-    condition: Optional[str] = Field(description="Condition expression for loops and branches.")
-    substeps: Optional[List[SubStep]] = Field(description="Nested substeps for loops, branches, or parallel execution.")
-
-    # class Config:
-    #     """Configuration for the Step model."""
-    #     json_schema_extra = {
-    #         "description": "The `Step` class represents an atomic unit of work that involves using specific tools to achieve a clear goal."
-    #         # Removed 'examples' as it is now handled at the field level
-    #     }
+    tool: Optional[str] = Field(default=None, description="A `Tool` instance required for the step, if applicable.")
+    action: Optional[str] = Field(default=None, description="Action description in plain English.")
+    condition: Optional[str] = Field(default=None, description="Condition expression for loops and branches.")
+    substeps: Optional[List[SubStep]] = Field(default=[], description="Nested substeps for loops, branches, or parallel execution.")
 
     model_config = {
         "extra": "forbid",
@@ -103,7 +88,7 @@ class Plan(BaseModel):
 
     model_config = {
         "extra": "forbid",
-    } 
+    }
 
 
 @tool

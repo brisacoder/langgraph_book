@@ -1,3 +1,4 @@
+import logging
 import os
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -9,6 +10,16 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential
 from state import State, get_state
 from spotify_model import Playlist, Track, Tracks
 from spotify_types import SpotifyID
+
+
+logger = logging.getLogger(__name__)
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',  # Define the format
+    handlers=[logging.StreamHandler()]  # Output to the console
+)
 
 
 def get_spotify_user_authorization() -> spotipy.Spotify:
@@ -304,7 +315,7 @@ def find_similar_artists(artists: List[SpotifyID]) -> Dict[SpotifyID, str]:
         try:
             related_artists = sp.artist_related_artists(artist)["artists"]
         except Exception as e:
-            print(f"Unexpected error for artist {artist}: {str(e)}")
+            logger.error(f"Unexpected error for artist {artist}: {str(e)}")
             continue
         for item in related_artists:
             id = item.get("id")
@@ -381,4 +392,4 @@ def get_artists_from_playlist(playlist_id: SpotifyID) -> Dict[SpotifyID, str]:
 
 
 def get_spotify_tools() -> List:
-    return [get_playlists, create_spotify_playlist, add_tracks_to_playlist, filter_artists, get_artists_from_playlist, find_similar_artists, find_top_tracks, search_tool, get_audio_features]
+    return [get_playlists, create_spotify_playlist, add_tracks_to_playlist, filter_artists, get_artists_from_playlist, find_similar_artists, find_top_tracks, get_audio_features]

@@ -20,6 +20,9 @@ from prompts import Prompts
 # State
 
 from state import State, get_state
+from langgraph.graph.state import CompiledStateGraph
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import END, StateGraph, START
 
 
 load_dotenv(override=True)
@@ -33,10 +36,7 @@ logging.basicConfig(
 )
 
 
-tool_node = ToolNode(get_spotify_tools() + get_plan_tools())
-
-
-async def generation_node(state: State, config: RunnableConfig) -> Dict:
+async def planner_node(state: State, config: RunnableConfig) -> Dict:
     """
     Generates the assistant's response based on the current state.
 
@@ -70,3 +70,59 @@ async def generation_node(state: State, config: RunnableConfig) -> Dict:
     except RuntimeError as e:
         logging.error(f"Error in generation_node: {e}")
         return {"messages": []}
+
+
+async def end_node(state: State) -> Dict:
+    """
+    Terminates the conversation and cleans up any state.
+
+    Args:
+        state (State): The current conversation state.
+
+    Returns:
+        State: The updated state signaling the end of the conversation.
+    """
+    return {"messages": []}
+
+
+def build_graph() -> CompiledStateGraph:
+    """
+    Builds and compiles the state graph for the conversation flow.
+
+    Returns:
+        CompiledStateGraph: The compiled state graph with nodes and transitions.
+
+    Notes:
+        - Defines nodes for generation, reflection, and ending the conversation.
+        - Sets up conditional transitions based on the number of rounds.
+    """
+    builder = StateGraph(State)
+    tool_node = ToolNode(get_spotify_tools() + get_plan_tools())
+    builder.add_node("planner", planner_node)
+    builder.add_node("end", end_node)
+    builder.add_edge(START, "planner")
+    builder.add_edge("end", END)
+
+    def should_continue(state: State) -> str:
+        """
+        Determines whether the conversation should continue or end.
+
+        Args:
+            state (State): The current conversation state.
+
+        Returns:
+            str: The name of the next node ('end' or 'reflect').
+        """
+        messages = state["messages"]
+        last_message = messages[-1]
+        if last_message.tool_calls:
+            return "tools"
+        return "end"
+
+    builder.add_node("tools", tool_node)
+    builder.add_conditional_edges("planner", should_continue)
+    builder.add_edge("tools", "planner")
+    memory = MemorySaver()
+    graph = builder.compile(checkpointer=memory)
+    graph.get_state
+    return graph
