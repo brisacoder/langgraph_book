@@ -23,6 +23,7 @@ class Prompts:
     **Instructions:**
 
     - You must validate the plan before starting to work on it.
+    - Use your knowledge base when a tool is not available to fulfill a step
     - Do not ask for user confirmation.
     """
 

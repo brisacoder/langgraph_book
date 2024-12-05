@@ -297,37 +297,38 @@ def filter_artists(playlist_id: SpotifyID, new_artists: List[SpotifyID]) -> Set[
     return valid_artists
 
 
-@tool
-def find_similar_artists(artists: List[SpotifyID]) -> Dict[SpotifyID, str]:
-    """
-    Find similar artists for a given a list of Spotify artists IDs.
+# @tool
+# def find_similar_artists(artists: List[SpotifyID]) -> Dict[SpotifyID, str]:
+#     """
+#     Find similar artists for a given a list of Spotify artists IDs.
 
-    Args:
-        artists (List[SpotifyID]): List of Spotify artists IDs in the format <base-62 number>
+#     Args:
+#         artists (List[SpotifyID]): List of Spotify artists IDs in the format <base-62 number>
 
-    Returns:
-       Set[SpotifyID]: A set of Spotify IDs.
-    """
+#     Returns:
+#        Dict[SpotifyID, str]: A dictionary where keys are related artist URI and values are artist names
+#     """
 
-    similar_artists: Dict[SpotifyID, str] = {}
-    sp = get_spotify_client()
-    for artist in artists:
-        try:
-            related_artists = sp.artist_related_artists(artist)["artists"]
-        except Exception as e:
-            logger.error(f"Unexpected error for artist {artist}: {str(e)}")
-            continue
-        for item in related_artists:
-            id = item.get("id")
-            if id and id not in artists:
-                similar_artists[id] = item.get("name")
-    return similar_artists
+#     similar_artists: Dict[SpotifyID, str] = {}
+#     sp = get_spotify_user_authorization()
+#     for artist in artists:
+#         try:
+#             temp = sp.artist_related_artists(artist)
+#             related_artists = temp["artists"]
+#         except Exception as e:
+#             logger.error(f"Unexpected error for artist {artist}: {str(e)}")
+#             continue
+#         for item in related_artists:
+#             id = item.get("id")
+#             if id and id not in artists:
+#                 similar_artists[id] = item.get("name")
+#     return similar_artists
 
 
 @tool
 def find_top_tracks(artists: List[SpotifyID]) -> List[SpotifyID]:
     """
-    Find top tracks for a list of Spotify artists URIs.
+    Find top tracks for each of Spotify artists on the list.
 
     Args:
         artists (List[SpotifyID]): List of Spotify artists IDs in <base-62 number>
@@ -392,4 +393,4 @@ def get_artists_from_playlist(playlist_id: SpotifyID) -> Dict[SpotifyID, str]:
 
 
 def get_spotify_tools() -> List:
-    return [get_playlists, create_spotify_playlist, add_tracks_to_playlist, filter_artists, get_artists_from_playlist, find_similar_artists, find_top_tracks, get_audio_features]
+    return [get_playlists, create_spotify_playlist, add_tracks_to_playlist, filter_artists, get_artists_from_playlist, find_top_tracks, get_audio_features]
