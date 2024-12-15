@@ -58,7 +58,7 @@ class Step(BaseModel):
     tool: Optional[str] = Field(default=None, description="A `Tool` instance required for the step, if applicable.")
     action: Optional[str] = Field(default=None, description="Action description in plain English.")
     condition: Optional[str] = Field(default=None, description="Condition expression for loops and branches.")
-    substeps: Optional[List[SubStep]] = Field(default=[], description="Nested substeps for loops, branches, or parallel execution.")
+    substeps: Optional[List[SubStep]] = Field(None, description="Nested substeps for loops, branches, or parallel execution.")
 
     model_config = {
         "extra": "forbid",

@@ -17,18 +17,22 @@ logger = logging.getLogger(__name__)
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',  # Define the format
-    handlers=[logging.StreamHandler()]  # Output to the console
+    format="%(asctime)s - %(levelname)s - %(message)s",  # Define the format
+    handlers=[logging.StreamHandler()],  # Output to the console
 )
 
 
 def get_spotify_user_authorization() -> spotipy.Spotify:
     scopes = "user-library-modify, playlist-modify-private, playlist-modify-public"
 
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scopes,
-                         client_id=os.environ.get("SPOTIFY_CLIENT_ID"),
-                         client_secret=os.environ.get("SPOTIFY_CLIENT_SECRET"),
-                         redirect_uri=os.environ.get("SPOTIFY_REDIRECT_URI")))
+    sp = spotipy.Spotify(
+        auth_manager=SpotifyOAuth(
+            scope=scopes,
+            client_id=os.environ.get("SPOTIFY_CLIENT_ID"),
+            client_secret=os.environ.get("SPOTIFY_CLIENT_SECRET"),
+            redirect_uri=os.environ.get("SPOTIFY_REDIRECT_URI"),
+        )
+    )
 
     return sp
 
@@ -47,53 +51,6 @@ def get_spotify_client() -> spotipy.Spotify:
     return spotipy.Spotify(auth_manager=auth_manager)
 
 
-# @tool
-# def get_playlists() -> Dict[str, List[Playlist]]:
-#     """
-#     Retrieves all Spotify playlists for a user. Each playlist includes the Spotify URI and other relevant data
-
-#     Returns:
-#         Dict[str, List[Playlist]]: A dictionary containing a aingle key `playlists` and a list of Playlist as value.
-#             Each Playlist includes the Spotify URI and other relevant data
-#     """
-#     sp = get_spotify_client()
-#     playlists: List[Playlist] = []
-
-#     try:
-#         # Fetch the current user's playlists with pagination
-#         playlists_raw = sp.user_playlists(user=os.getenv("SPOTIFY_USER_ID"), limit=100)
-#         while playlists_raw:
-#             for playlist_data in playlists_raw['items']:
-#                 # Map API data to the Playlist model
-#                 playlist = Playlist(
-#                     id=playlist_data['id'],
-#                     uri=playlist_data['uri'],
-#                     name=playlist_data['name'],
-#                     description=playlist_data.get('description'),
-#                     owner=playlist_data['owner']['display_name'],
-#                     tracks_total=playlist_data['tracks']['total'],
-#                     is_public=playlist_data.get('public'),
-#                     collaborative=playlist_data.get('collaborative'),
-#                     snapshot_id=playlist_data.get('snapshot_id')
-#                 )
-#                 playlists.append(playlist)
-#             # Check if there is a next page
-#             if playlists_raw['next']:
-#                 playlists_raw = sp.next(playlists_raw)
-#             else:
-#                 break
-#     except spotipy.SpotifyException as e:
-#         return {"error": [str(e)]}
-
-#     # Save state
-#     state: (State) = get_state()
-#     state["playlists"] = playlists
-
-#     # Serialize the playlists to JSON-serializable dictionaries
-#     serialized_playlists = [playlist.model_dump() for playlist in playlists]
-#     return {"playlists": serialized_playlists}
-
-
 @tool
 def get_playlists() -> List[Playlist]:
     """
@@ -109,15 +66,15 @@ def get_playlists() -> List[Playlist]:
         # Fetch the current user's playlists with pagination
         playlists_raw = sp.user_playlists(user=os.getenv("SPOTIFY_USER_ID"), limit=100)
         while playlists_raw:
-            for playlist_data in playlists_raw['items']:
+            for playlist_data in playlists_raw["items"]:
                 # Map API data to the Playlist model
                 playlist = Playlist(
-                    id=playlist_data['id'],
-                    name=playlist_data['name'],
+                    id=playlist_data["id"],
+                    name=playlist_data["name"],
                 )
                 playlists.append(playlist)
             # Check if there is a next page
-            if playlists_raw['next']:
+            if playlists_raw["next"]:
                 playlists_raw = sp.next(playlists_raw)
             else:
                 break
@@ -125,7 +82,7 @@ def get_playlists() -> List[Playlist]:
         return [str(e)]
 
     # Save state
-    state: (State) = get_state()
+    state: State = get_state()
     state["playlists"] = playlists
 
     # Serialize the playlists to JSON-serializable dictionaries
@@ -150,27 +107,32 @@ def get_track_list_from_playlist(playlist_id: SpotifyID) -> List[Dict[str, Any]]
 
     try:
         # Fetch the playlist's tracks with pagination
-        playlist = sp.user_playlist(user=os.getenv("SPOTIFY_USER_ID"), playlist_id=playlist_id)
-        if 'tracks' in playlist:
+        playlist = sp.user_playlist(
+            user=os.getenv("SPOTIFY_USER_ID"), playlist_id=playlist_id
+        )
+        if "tracks" in playlist:
             tracks = playlist["tracks"]
             while tracks:
-                for item in tracks['items']:
-                    track_data = item['track']
+                for item in tracks["items"]:
+                    track_data = item["track"]
                     # Map API data to the Track model
                     track = Track(
-                        id=track_data['id'],
-                        uri=track_data['uri'],
-                        name=track_data['name'],
-                        artists=[artist['name'] for artist in track_data['artists']],
-                        album=track_data['album']['name'],
-                        duration_ms=track_data.get('duration_ms'),
-                        explicit=track_data.get('explicit'),
-                        popularity=track_data.get('popularity')
+                        id=track_data["id"],
+                        uri=track_data["uri"],
+                        name=track_data["name"],
+                        artists=[artist["name"] for artist in track_data["artists"]],
+                        album=track_data["album"]["name"],
+                        duration_ms=track_data.get("duration_ms"),
+                        explicit=track_data.get("explicit"),
+                        popularity=track_data.get("popularity"),
                     )
                     playlist_tracks.append(track)
-                    [playlist_artists.add(artist['name']) for artist in track_data['artists']]
+                    [
+                        playlist_artists.add(artist["name"])
+                        for artist in track_data["artists"]
+                    ]
                 # Check if there is a next page
-                if tracks['next']:
+                if tracks["next"]:
                     # TODO unclear in this case
                     tracks = sp.next(tracks)
                 else:
@@ -232,19 +194,19 @@ def create_spotify_playlist(name: str, description: str) -> Dict[str, Any]:
             user=os.getenv("SPOTIFY_USER_ID"),
             name=name,
             public=True,
-            description=description
+            description=description,
         )
         # Map API data to the Playlist model
         new_playlist = Playlist(
-            id=new_playlist_data['id'],
-            uri=new_playlist_data['uri'],
-            name=new_playlist_data['name'],
-            description=new_playlist_data.get('description'),
-            owner=new_playlist_data['owner']['display_name'],
-            tracks_total=new_playlist_data['tracks']['total'],
-            is_public=new_playlist_data.get('public'),
-            collaborative=new_playlist_data.get('collaborative'),
-            snapshot_id=new_playlist_data.get('snapshot_id')
+            id=new_playlist_data["id"],
+            uri=new_playlist_data["uri"],
+            name=new_playlist_data["name"],
+            description=new_playlist_data.get("description"),
+            owner=new_playlist_data["owner"]["display_name"],
+            tracks_total=new_playlist_data["tracks"]["total"],
+            is_public=new_playlist_data.get("public"),
+            collaborative=new_playlist_data.get("collaborative"),
+            snapshot_id=new_playlist_data.get("snapshot_id"),
         )
         state: State = get_state()
         state["new_playlist"] = new_playlist
@@ -254,7 +216,9 @@ def create_spotify_playlist(name: str, description: str) -> Dict[str, Any]:
 
 
 @tool
-def add_tracks_to_playlist(playlist_id: SpotifyID, tracks: List[SpotifyID]) -> Dict[str, Any]:
+def add_tracks_to_playlist(
+    playlist_id: SpotifyID, tracks: List[SpotifyID]
+) -> Dict[str, Any]:
     """
     Adds tracks to a Spotify playlist.
 
@@ -274,7 +238,9 @@ def add_tracks_to_playlist(playlist_id: SpotifyID, tracks: List[SpotifyID]) -> D
 
 
 @tool
-def filter_artists(playlist_id: SpotifyID, new_artists: List[SpotifyID]) -> Set[SpotifyID]:
+def filter_artists(
+    playlist_id: SpotifyID, new_artists: List[SpotifyID]
+) -> Set[SpotifyID]:
     """
     Checks `new_artists` against an existing Playlist. It returns a set
      of artists that can be used in a new playlist.
@@ -289,10 +255,10 @@ def filter_artists(playlist_id: SpotifyID, new_artists: List[SpotifyID]) -> Set[
     """
     state: State = get_state()
     artists: Set[SpotifyID] = set()
-    state['candidate_artists'] = set(new_artists)
+    state["candidate_artists"] = set(new_artists)
     for v in state["artists"].keys():
         artists.add(v)
-    valid_artists = state['candidate_artists'] - artists
+    valid_artists = state["candidate_artists"] - artists
     state["valid_artists"] = valid_artists
     return valid_artists
 
@@ -341,7 +307,7 @@ def find_top_tracks(artists: List[SpotifyID]) -> List[SpotifyID]:
     sp = get_spotify_client()
     for artist in artists:
         try:
-            top_tracks = sp.artist_top_tracks(artist, country='US')
+            top_tracks = sp.artist_top_tracks(artist, country="US")
             for track in top_tracks["tracks"]:
                 tracks.append(track["id"])
         except Exception as e:
@@ -353,7 +319,7 @@ def find_top_tracks(artists: List[SpotifyID]) -> List[SpotifyID]:
 @tool
 def get_artists_from_playlist(playlist_id: SpotifyID) -> Dict[SpotifyID, str]:
     """
-    Get the list of unique artists from a Spotify playlist URI
+    Get the list of artists from a Spotify playlist
 
     Args:
         playlist_id (SpotifyID): Spotify playlist ID in base-62 number
@@ -366,17 +332,19 @@ def get_artists_from_playlist(playlist_id: SpotifyID) -> Dict[SpotifyID, str]:
 
     try:
         # Fetch the playlist's tracks with pagination
-        playlist = sp.user_playlist(user=os.getenv("SPOTIFY_USER_ID"), playlist_id=playlist_id)
-        if 'tracks' in playlist:
+        playlist = sp.user_playlist(
+            user=os.getenv("SPOTIFY_USER_ID"), playlist_id=playlist_id
+        )
+        if "tracks" in playlist:
             tracks = playlist["tracks"]
             while tracks:
-                for item in tracks['items']:
-                    track_data = item['track']
+                for item in tracks["items"]:
+                    track_data = item["track"]
                     # Map API data to the Track model
-                    for artist in track_data['artists']:
-                        playlist_artists[artist["id"]] = artist['name']
+                    for artist in track_data["artists"]:
+                        playlist_artists[artist["id"]] = artist["name"]
                 # Check if there is a next page
-                if tracks['next']:
+                if tracks["next"]:
                     # TODO unclear in this case
                     tracks = sp.next(tracks)
                 else:
@@ -393,4 +361,12 @@ def get_artists_from_playlist(playlist_id: SpotifyID) -> Dict[SpotifyID, str]:
 
 
 def get_spotify_tools() -> List:
-    return [get_playlists, create_spotify_playlist, add_tracks_to_playlist, filter_artists, get_artists_from_playlist, find_top_tracks, get_audio_features]
+    return [
+        get_playlists,
+        create_spotify_playlist,
+        add_tracks_to_playlist,
+        filter_artists,
+        get_artists_from_playlist,
+        find_top_tracks,
+        get_audio_features,
+    ]

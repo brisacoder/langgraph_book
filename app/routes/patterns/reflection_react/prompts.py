@@ -18,7 +18,5 @@ Thought: I know the final answer
 Final Answer: Provide the final answer to the original question incorporating all content from previous cycles. 
      Ensure text is formatted to 80 columns.
 
-     
-
 Begin!
 """
