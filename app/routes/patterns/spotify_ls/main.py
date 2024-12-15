@@ -101,15 +101,12 @@ async def planner_node(state: State, config: RunnableConfig) -> Dict:
     )
     partial_prompt = prompt.partial(system_prompt=Prompts.HUMAN)
     llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"), temperature=1.0)
-    llm_with_structure = llm.with_structured_output(schema=Plan, method="json_schema")
+    llm_with_structure = llm.with_structured_output(schema=Plan, method="json_schema", include_raw=True)
     generate = partial_prompt | llm_with_structure
 
     try:
-        llm_response = cast(
-            AIMessage, await generate.ainvoke({"messages": state["messages"]})
-        )
-        plan: Plan = llm_response.tool_calls[0]["args"]
-        return {"plan": plan}
+        llm_response = await generate.ainvoke({"messages": state["messages"]})
+        return {"messages": llm_response["raw"],  "plan": llm_response["parsed"]}
     except RuntimeError as e:
         logging.error(f"Error in generation_node: {e}")
         return {"messages": []}
@@ -140,7 +137,7 @@ async def reflection_node(state: State) -> Dict:
     )
     llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"))
     llm_with_structure = llm.with_structured_output(
-        schema=PlanCritique, method="json_schema"
+        schema=PlanCritique, method="json_schema", include_raw=True
     )
     reflect = reflection_prompt | llm_with_structure
     # Other messages we need to adjust
@@ -171,13 +168,13 @@ async def reflection_node(state: State) -> Dict:
         logging.error(f"Error translating messages: {e}")
 
     try:
-        res = await reflect.ainvoke({"messages": translated})
+        llm_response = await reflect.ainvoke({"messages": translated})
     except RuntimeError as e:
         logging.error(f"Error in reflection_node: {e}")
         return default_state()
 
     # We treat the output of this as human feedback for the generator
-    return {"messages": [HumanMessage(content=res.content)], "rounds": 1}
+    return {"messages": [HumanMessage(content=llm_response["raw"].content)], "rounds": 1}
 
 
 async def end_node(state: State) -> Dict:
@@ -212,7 +209,6 @@ def build_graph() -> CompiledStateGraph:
     builder.add_node("end", end_node)
     builder.add_edge(START, "patch_prompt")
     builder.add_edge("patch_prompt", "planner")
-    builder.add_edge("planner", "reflection")
     builder.add_edge("end", END)
 
     # def should_continue(state: State) -> str:
@@ -243,9 +239,10 @@ def build_graph() -> CompiledStateGraph:
         """
         if state["rounds"] > MAX_ROUNDS:
             return "end"
-        return "reflect"
+        return "reflection"
 
     builder.add_conditional_edges("planner", should_continue)
+    builder.add_edge("reflection", "planner")
 
     # builder.add_node("tools", tool_node)
     # builder.add_conditional_edges("planner", should_continue)

@@ -16,9 +16,8 @@ class SubStepCritique(BaseModel):
         None,
         description="Actionable improvements or adjustments suggested for this sub-step.",
     )
-    is_perfect: bool = Field(
-        False, description="True if the sub-step needs no improvements."
-    )
+
+    is_perfect: bool = Field(..., description="True if the sub-step needs no improvements.")
 
 
 class StepCritique(BaseModel):
@@ -35,10 +34,8 @@ class StepCritique(BaseModel):
         None,
         description="Actionable improvements or adjustments suggested for this step.",
     )
-    is_perfect: bool = Field(
-        False,
-        description="True if the step is already optimal and requires no changes.",
-    )
+    is_perfect: bool = Field(..., description="True if the step is already optimal and requires no changes.")
+
     substeps: List[SubStepCritique] = Field(
         default_factory=list,
         description="Critiques of any sub-steps that belong to this step.",
@@ -62,6 +59,6 @@ class PlanCritique(BaseModel):
         description="General improvements or guidance applicable to the entire plan.",
     )
     is_optimal: bool = Field(
-        False,
+        ...,
         description="True if the entire plan is considered optimal and requires no further improvements.",
     )
