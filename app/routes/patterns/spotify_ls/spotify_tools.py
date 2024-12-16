@@ -238,7 +238,7 @@ def add_tracks_to_playlist(
 
 
 @tool
-def filter_artists(
+def filter_artists_by_id(
     playlist_id: SpotifyID, new_artists: List[SpotifyID]
 ) -> Set[SpotifyID]:
     """
@@ -256,12 +256,34 @@ def filter_artists(
     state: State = get_state()
     artists: Set[SpotifyID] = set()
     state["candidate_artists"] = set(new_artists)
-    for v in state["artists"].keys():
+    for v in state["artists_id"].keys():
         artists.add(v)
     valid_artists = state["candidate_artists"] - artists
     state["valid_artists"] = valid_artists
     return valid_artists
 
+
+@tool
+def filter_artists_by_name(
+    playlist_id: SpotifyID, new_artists: List[str]
+) -> Set[str]:
+    """
+    Checks `new_artists` against an existing Playlist. It returns a set
+     of artists that can be used in a new playlist.
+
+    Args:
+        playlist_id (SpotifyID): Spotify playlist ID in the format <base-62 number>
+        new_artists (List[str]): List of artists names
+
+    Returns:
+        Set[str]: List of artists names that can be used in a new playlist
+    """
+    state: State = get_state()
+    valid_artists: Set[str] = set()
+    for artist in new_artists:
+        if artist not in state["artist_name"]:
+            valid_artists.add(artist)
+    return valid_artists
 
 # @tool
 # def find_similar_artists(artists: List[SpotifyID]) -> Dict[SpotifyID, str]:
@@ -328,7 +350,8 @@ def get_artists_from_playlist(playlist_id: SpotifyID) -> Dict[SpotifyID, str]:
         Dict[SpotifyID, str]: A dictionary where keys=SpotifyID name and value=artist name
     """
     sp = get_spotify_client()
-    playlist_artists: Dict[SpotifyID, str] = {}
+    playlist_artists_id: Dict[SpotifyID, str] = {}
+    playlist_artists_name: Dict[str, SpotifyID] = {}
 
     try:
         # Fetch the playlist's tracks with pagination
@@ -342,7 +365,8 @@ def get_artists_from_playlist(playlist_id: SpotifyID) -> Dict[SpotifyID, str]:
                     track_data = item["track"]
                     # Map API data to the Track model
                     for artist in track_data["artists"]:
-                        playlist_artists[artist["id"]] = artist["name"]
+                        playlist_artists_id[artist["id"]] = artist["name"]
+                        playlist_artists_name[artist["name"]] = artist["id"]
                 # Check if there is a next page
                 if tracks["next"]:
                     # TODO unclear in this case
@@ -354,10 +378,11 @@ def get_artists_from_playlist(playlist_id: SpotifyID) -> Dict[SpotifyID, str]:
 
     # Save state
     state = get_state()
-    state["artists"] = playlist_artists
+    state["artists"] = playlist_artists_id
+    state["artists_name"] = playlist_artists_name
 
     # Serialize the tracks to JSON-serializable dictionaries
-    return playlist_artists
+    return playlist_artists_id
 
 
 def get_spotify_tools() -> List:
@@ -365,7 +390,8 @@ def get_spotify_tools() -> List:
         get_playlists,
         create_spotify_playlist,
         add_tracks_to_playlist,
-        filter_artists,
+        filter_artists_by_id,
+        filter_artists_by_name,
         get_artists_from_playlist,
         find_top_tracks,
     ]

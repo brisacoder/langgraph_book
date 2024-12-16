@@ -72,8 +72,12 @@ async def patch_prompt_node(state: State, config: RunnableConfig) -> Dict:
     first_message = state["messages"][0]
     tools = get_spotify_tools() + get_plan_tools() + get_search_tools()
     tools_schema = [wrap_as_tool(tool) for tool in tools]
-    prompt_suffix = f"\n- You have access to the following Tools: \n {json.dumps(tools_schema)}"
-    new_prompt = HumanMessage(content=first_message.content + prompt_suffix, id=first_message.id)
+    prompt_suffix = (
+        f"\n- You have access to the following Tools: \n {json.dumps(tools_schema)}"
+    )
+    new_prompt = HumanMessage(
+        content=first_message.content + prompt_suffix, id=first_message.id
+    )
     return {"messages": new_prompt}
 
 
@@ -102,12 +106,14 @@ async def planner_node(state: State, config: RunnableConfig) -> Dict:
     )
     partial_prompt = prompt.partial(system_prompt=Prompts.HUMAN)
     llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"), temperature=1.0)
-    llm_with_structure = llm.with_structured_output(schema=Plan, method="json_schema", include_raw=True)
+    llm_with_structure = llm.with_structured_output(
+        schema=Plan, method="json_schema", include_raw=True
+    )
     generate = partial_prompt | llm_with_structure
 
     try:
         llm_response = await generate.ainvoke({"messages": state["messages"]})
-        return {"messages": llm_response["raw"],  "plan": llm_response["parsed"]}
+        return {"messages": llm_response["raw"], "plan": llm_response["parsed"]}
     except RuntimeError as e:
         logging.error(f"Error in generation_node: {e}")
         return {"messages": []}
@@ -175,7 +181,10 @@ async def reflection_node(state: State) -> Dict:
         return default_state()
 
     # We treat the output of this as human feedback for the generator
-    return {"messages": [HumanMessage(content=llm_response["raw"].content)], "rounds": 1}
+    return {
+        "messages": [HumanMessage(content=llm_response["raw"].content)],
+        "rounds": 1,
+    }
 
 
 async def plan_exec_node(state: State, config: RunnableConfig) -> Dict:
@@ -199,13 +208,12 @@ async def plan_exec_node(state: State, config: RunnableConfig) -> Dict:
                 "{system_prompt}",
             ),
             MessagesPlaceholder(variable_name="messages"),
-            (
-                "human",
-                "{exec_prompt}"
-            )
+            ("human", "{exec_prompt}"),
         ]
     )
-    partial_prompt = prompt.partial(system_prompt=Prompts.SYSTEM, exec_prompt=Prompts.EXEC)
+    partial_prompt = prompt.partial(
+        system_prompt=Prompts.SYSTEM, exec_prompt=Prompts.EXEC
+    )
     llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"), temperature=1.0)
     tools = get_spotify_tools() + get_plan_tools() + get_search_tools()
     llm_with_tools = llm.bind_tools(tools, tool_choice="auto")
@@ -288,12 +296,19 @@ def build_graph() -> CompiledStateGraph:
             return "prune_messages"
         return "reflection"
 
+    def should_call_tools(state: State) -> str:
+        messages = state["messages"]
+        last_message = messages[-1]
+        if last_message.tool_calls:
+            return "tools"
+        return "end"
+
     builder.add_conditional_edges("planner", should_continue)
     builder.add_edge("reflection", "planner")
 
     builder.add_node("tools", tool_node)
     builder.add_edge("tools", "plan_exec")
-    builder.add_conditional_edges("plan_exec", tools_condition)
+    builder.add_conditional_edges("plan_exec", should_call_tools)
     memory = MemorySaver()
     graph = builder.compile(checkpointer=memory)
     return graph
