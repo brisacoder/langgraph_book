@@ -70,7 +70,7 @@ async def patch_prompt_node(state: State, config: RunnableConfig) -> Dict:
     """
 
     first_message = state["messages"][0]
-    tools = get_spotify_tools() + get_plan_tools() + get_search_tools()
+    tools = get_spotify_tools() + get_search_tools()
     tools_schema = [wrap_as_tool(tool) for tool in tools]
     prompt_suffix = (
         f"\n- You have access to the following Tools: \n {json.dumps(tools_schema)}"
@@ -215,7 +215,7 @@ async def plan_exec_node(state: State, config: RunnableConfig) -> Dict:
         system_prompt=Prompts.SYSTEM, exec_prompt=Prompts.EXEC
     )
     llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"), temperature=1.0)
-    tools = get_spotify_tools() + get_plan_tools() + get_search_tools()
+    tools = get_spotify_tools() + get_search_tools()
     llm_with_tools = llm.bind_tools(tools, tool_choice="auto")
     generate = partial_prompt | llm_with_tools
 
@@ -270,7 +270,7 @@ def build_graph() -> CompiledStateGraph:
         - Sets up conditional transitions based on the number of rounds.
     """
     builder = StateGraph(State)
-    tool_node = ToolNode(get_spotify_tools() + get_plan_tools() + get_search_tools())
+    tool_node = ToolNode(get_spotify_tools() + get_search_tools())
     builder.add_node("patch_prompt", patch_prompt_node)
     builder.add_node("planner", planner_node)
     builder.add_node("reflection", reflection_node)

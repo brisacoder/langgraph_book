@@ -281,7 +281,7 @@ def filter_artists_by_name(
     state: State = get_state()
     valid_artists: Set[str] = set()
     for artist in new_artists:
-        if artist not in state["artist_name"]:
+        if artist not in state["artists_name"]:
             valid_artists.add(artist)
     return valid_artists
 

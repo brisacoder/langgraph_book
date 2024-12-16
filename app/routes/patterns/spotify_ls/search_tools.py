@@ -31,10 +31,12 @@ def find_similar_artists(artists: List[str]) -> Dict[str, List[Any]]:
         search_depth="advanced",
     )
     for artist in artists:
-        search_result[artist] = tool.invoke(
-            {"query": f"Tell me 2-3 artists similar to {artist}"}
-        )
-
+        try:
+            search_result[artist] = tool.invoke(
+                {"query": f"Tell me 2-3 artists similar to {artist}"}
+            )
+        except Exception as e:
+            print(f"Unexpected error for artist {artist}: {str(e)}")
     return search_result
 
 
