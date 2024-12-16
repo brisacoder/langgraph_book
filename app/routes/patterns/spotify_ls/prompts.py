@@ -31,7 +31,7 @@ Create a step-by-step plan with atomic tasks to solve the following problem:
 
 **Instructions:**
 
-- You must validate the plan.
+- You must validate the plan only once.
 - If a specific Tool or Function is not available for a given step, fall back to the search tool
 - Do not ask for user confirmation.
 - **Feedback**: **If you receive feedback, always add the new content to your latest answer without removing or altering any

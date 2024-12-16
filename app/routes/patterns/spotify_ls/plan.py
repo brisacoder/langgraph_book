@@ -78,12 +78,16 @@ class Plan(BaseModel):
             "and reproducible."
         )
     )
-    Reasoning: str = Field(
+    reasoning: str = Field(
         ...,
         description=(
             "OpenAI should capture here the entire reasoning sequence used to create "
             " the plan"
         )
+    )
+    validated: bool = Field(
+        ...,
+        description="True if the plan has been validated",
     )
 
     model_config = {
