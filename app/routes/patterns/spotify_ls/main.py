@@ -1,20 +1,19 @@
-from copy import deepcopy
 import json
 import logging
 import os
-from typing import Dict, cast
+from typing import Dict
 from dotenv import load_dotenv
 
 MAX_ROUNDS = 1
 
 # Tools imports
 
-from langgraph.prebuilt import ToolNode, tools_condition
-from plan_critique import PlanCritique
+from langgraph.prebuilt import ToolNode
+from models.plan_critique import PlanCritique
 from tools_api import wrap_as_tool
 from search_tools import get_search_tools
 from spotify_tools import get_spotify_tools
-from plan import Plan, get_plan_tools
+from models.plan import Plan, get_plan_tools
 from langchain_openai import ChatOpenAI
 
 # System Prompt imports
@@ -32,7 +31,7 @@ from prompts import Prompts
 
 # State
 
-from state import State, get_state
+from models.state import State, get_state
 from langchain_core.messages import RemoveMessage
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.memory import MemorySaver

@@ -7,8 +7,8 @@ from langchain_core.tools import tool
 from typing import Any, List, Set, Dict
 
 from tenacity import retry, stop_after_attempt, wait_random_exponential
-from state import State, get_state
-from spotify_model import Playlist, Track, Tracks
+from models.state import State, get_state
+from models.spotify_model import Playlist, Track, Tracks
 from spotify_types import SpotifyID
 
 

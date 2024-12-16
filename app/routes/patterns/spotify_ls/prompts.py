@@ -18,7 +18,7 @@ Create a step-by-step plan with atomic tasks to solve the following problem:
 
 2. **Remove from the new artist list those that are already present in the 'New Rock and Blues' Playlist.**
 
-3. **Focus on Post-2010 Success:** Only include artists who became mainstream after the year 2010.
+3. **Focus on Post-2010 Success:** Only include new artists who became mainstream after the year 2010.
 
 4. **Minimum Number of New Artists:** Include tracks from at least 40 different artists not present in the 'New Rock and Blues' playlist.
 
