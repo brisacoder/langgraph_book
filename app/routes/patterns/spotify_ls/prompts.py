@@ -5,7 +5,6 @@ Execute the step-by-step plan:
 **Instructions:**
 
 - You must validate the plan before start working on it
-- If a specific Tool or Function is not available for a given step, try using the search tool instead
 - Do not ask for user confirmation.
 """
 
@@ -33,7 +32,7 @@ Create a step-by-step plan with atomic tasks to solve the following problem:
 **Instructions:**
 
 - You must validate the plan.
-- Use your knowledge base when a Tool or Function is not available to solve a step
+- If a specific Tool or Function is not available for a given step, fall back to the search tool
 - Do not ask for user confirmation.
 - **Feedback**: **If you receive feedback, always add the new content to your latest answer without removing or altering any
 accurate information from your current response. **Under no circumstances should you remove or modify accurate

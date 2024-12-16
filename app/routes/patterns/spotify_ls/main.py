@@ -5,7 +5,7 @@ import os
 from typing import Dict, cast
 from dotenv import load_dotenv
 
-MAX_ROUNDS = 2
+MAX_ROUNDS = 1
 
 # Tools imports
 
@@ -33,6 +33,7 @@ from prompts import Prompts
 # State
 
 from state import State, get_state
+from langchain_core.messages import RemoveMessage
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph, START
@@ -218,6 +219,24 @@ async def plan_exec_node(state: State, config: RunnableConfig) -> Dict:
         return {"messages": []}
 
 
+async def prune_messages_node(state: State, config: RunnableConfig) -> Dict:
+    """
+    Prune message list to get more accurate results
+
+    Args:
+        state (State): The current conversation state containing messages and rounds.
+
+    Returns:
+        State: The updated state with the assistant's response and incremented rounds.
+
+    Notes:
+        - Uses the ChatOpenAI model to generate the assistant's reply.
+        - If an error occurs, logs the error and returns a default state.
+    """
+    messages = state["messages"]
+    return {"messages": [RemoveMessage(id=m.id) for m in messages[1:-1]]}
+
+
 async def end_node(state: State) -> Dict:
     """
     Terminates the conversation and cleans up any state.
@@ -248,9 +267,11 @@ def build_graph() -> CompiledStateGraph:
     builder.add_node("planner", planner_node)
     builder.add_node("reflection", reflection_node)
     builder.add_node("plan_exec", plan_exec_node)
+    builder.add_node("prune_messages", prune_messages_node)
     builder.add_node("end", end_node)
     builder.add_edge(START, "patch_prompt")
     builder.add_edge("patch_prompt", "planner")
+    builder.add_edge("prune_messages", "plan_exec")
     builder.add_edge("end", END)
 
     def should_continue(state: State) -> str:
@@ -264,7 +285,7 @@ def build_graph() -> CompiledStateGraph:
             str: The name of the next node ('end' or 'reflect').
         """
         if state["rounds"] > MAX_ROUNDS:
-            return "plan_exec"
+            return "prune_messages"
         return "reflection"
 
     builder.add_conditional_edges("planner", should_continue)

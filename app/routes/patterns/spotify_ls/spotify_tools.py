@@ -150,22 +150,22 @@ def get_track_list_from_playlist(playlist_id: SpotifyID) -> List[Dict[str, Any]]
     return serialized_tracks
 
 
-@tool
-@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-def get_audio_features(tracks: List[SpotifyID]):
-    """
-    Get audio features such as acousticness, danceability, energy, instrumentalness, tempo and valence.
+# @tool
+# @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
+# def get_audio_features(tracks: List[SpotifyID]):
+#     """
+#     Get audio features such as acousticness, danceability, energy, instrumentalness, tempo and valence.
 
-    Args:
-        tracks - a list of Spotify IDs
+#     Args:
+#         tracks - a list of Spotify IDs
 
-    Returns:
-        Dict[str, Any]: Dictionary representing tracks audio features
-    """
+#     Returns:
+#         Dict[str, Any]: Dictionary representing tracks audio features
+#     """
 
-    sp = get_spotify_client()
-    audio_features = sp.audio_features(tracks)
-    return audio_features
+#     sp = get_spotify_client()
+#     audio_features = sp.audio_features(tracks)
+#     return audio_features
 
 
 @tool
@@ -368,5 +368,4 @@ def get_spotify_tools() -> List:
         filter_artists,
         get_artists_from_playlist,
         find_top_tracks,
-        get_audio_features,
     ]
