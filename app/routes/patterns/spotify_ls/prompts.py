@@ -1,34 +1,16 @@
 class Prompts:
-    SPOTIFY = """
-Create, validate, and execute a step-by-step plan with atomic tasks to solve the following problem:
-
-**Objective:** Build a Spotify playlist with tracks that have the same vibe and genres as the playlist named 'New Rock and Blues', following the rules below.
-
-**Rules:**
-
-1. **For each artist in the 'New Rock and Blues' playlist, find 2-3 artists of a similar music style.** *Ensure that you process all artists, even if it requires multiple iterations or tool calls due to API limitations.*
-
-2. **Remove from the new artist list those that are already present in the 'New Rock and Blues' Playlist.**
-
-3. **Focus on Post-2010 Success:** Only include tracks from artists who achieved success after the year 2010.
-
-4. **Minimum Number of New Artists:** Include tracks from at least 40 different artists not present in the 'New Rock and Blues' playlist.
-
-5. **Recommend 3+ tracks for each new artist.**
-
-6. **Arrange for Smooth Listening Experience:** Organize the tracks to create a smooth listening experience, considering tempo, energy, and mood, using best practices.
-
-7. **Playlist Length:** Ensure the new playlist contains at least 100 tracks.
+    EXEC = """
+Execute the step-by-step plan:
 
 **Instructions:**
 
-- You must validate the plan
+- You must validate the plan before start working on it
 - Use your knowledge base when a Tool or Function is not available to solve a step
 - Do not ask for user confirmation.
 """
 
     HUMAN = """
-Create and validate a step-by-step plan with atomic tasks to solve the following problem:
+Create a step-by-step plan with atomic tasks to solve the following problem:
 
 **Objective:** Build a Spotify playlist with tracks that have the same vibe and genres as the playlist named 'New Rock and Blues', following the rules below.
 
@@ -53,6 +35,10 @@ Create and validate a step-by-step plan with atomic tasks to solve the following
 - You must validate the plan.
 - Use your knowledge base when a Tool or Function is not available to solve a step
 - Do not ask for user confirmation.
+- **Feedback**: **If you receive feedback, always add the new content to your latest answer without removing or altering any
+accurate information from your current response. **Under no circumstances should you remove or modify accurate
+content from your existing answer.** Instead, incorporate the feedback by expanding your answer, ensuring that all
+relevant details are included without summarizing or omitting any correct information.
 """
 
     SYSTEM = """
@@ -77,11 +63,6 @@ Guidelines:
 - **Do Not Assume or Simplify:** Avoid making assumptions or simplifying tasks unless explicitly instructed by the user.
 
 - **Maintain Professionalism:** Keep your language professional and focused, aiming to deliver exactly what the user has requested.
-
-- **Feedback**: **If you receive feedback, always add the new content to your latest answer without removing or altering any
-accurate information from your current response. **Under no circumstances should you remove or modify accurate
-content from your existing answer.** Instead, incorporate the feedback by expanding your answer, ensuring that all
-relevant details are included without summarizing or omitting any correct information.
 
 Your goal is to execute tasks with high accuracy and completeness, ensuring that the user's needs are fully met.
 """

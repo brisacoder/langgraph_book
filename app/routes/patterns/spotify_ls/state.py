@@ -29,7 +29,7 @@ class State(TypedDict, total=False):
     messages: Annotated[List[BaseMessage], add_messages]
     spotify_prompt: str
     plan: Plan
-    rounds: Annotated[int, add_messages]
+    rounds: Annotated[int, operator.add]
 
 
 state: State = State()

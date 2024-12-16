@@ -9,7 +9,7 @@ MAX_ROUNDS = 2
 
 # Tools imports
 
-from langgraph.prebuilt import ToolNode
+from langgraph.prebuilt import ToolNode, tools_condition
 from plan_critique import PlanCritique
 from tools_api import wrap_as_tool
 from search_tools import get_search_tools
@@ -177,6 +177,47 @@ async def reflection_node(state: State) -> Dict:
     return {"messages": [HumanMessage(content=llm_response["raw"].content)], "rounds": 1}
 
 
+async def plan_exec_node(state: State, config: RunnableConfig) -> Dict:
+    """
+    Executes the plan created by the previous nodes in the graph.
+
+    Args:
+        state (State): The current conversation state containing messages and rounds.
+
+    Returns:
+        State: The updated state with the assistant's response and incremented rounds.
+
+    Notes:
+        - Uses the ChatOpenAI model to generate the assistant's reply.
+        - If an error occurs, logs the error and returns a default state.
+    """
+    prompt = ChatPromptTemplate(
+        [
+            (
+                "system",
+                "{system_prompt}",
+            ),
+            MessagesPlaceholder(variable_name="messages"),
+            (
+                "human",
+                "{exec_prompt}"
+            )
+        ]
+    )
+    partial_prompt = prompt.partial(system_prompt=Prompts.SYSTEM, exec_prompt=Prompts.EXEC)
+    llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"), temperature=1.0)
+    tools = get_spotify_tools() + get_plan_tools() + get_search_tools()
+    llm_with_tools = llm.bind_tools(tools)
+    generate = partial_prompt | llm_with_tools
+
+    try:
+        llm_response = await generate.ainvoke({"messages": state["messages"]})
+        return {"messages": llm_response}
+    except RuntimeError as e:
+        logging.error(f"Error in generation_node: {e}")
+        return {"messages": []}
+
+
 async def end_node(state: State) -> Dict:
     """
     Terminates the conversation and cleans up any state.
@@ -202,30 +243,15 @@ def build_graph() -> CompiledStateGraph:
         - Sets up conditional transitions based on the number of rounds.
     """
     builder = StateGraph(State)
-    # tool_node = ToolNode(get_spotify_tools() + get_plan_tools())
+    tool_node = ToolNode(get_spotify_tools() + get_plan_tools() + get_search_tools())
     builder.add_node("patch_prompt", patch_prompt_node)
     builder.add_node("planner", planner_node)
     builder.add_node("reflection", reflection_node)
+    builder.add_node("plan_exec", plan_exec_node)
     builder.add_node("end", end_node)
     builder.add_edge(START, "patch_prompt")
     builder.add_edge("patch_prompt", "planner")
     builder.add_edge("end", END)
-
-    # def should_continue(state: State) -> str:
-    #     """
-    #     Determines whether the conversation should continue or end.
-
-    #     Args:
-    #         state (State): The current conversation state.
-
-    #     Returns:
-    #         str: The name of the next node ('end' or 'reflect').
-    #     """
-    #     messages = state["messages"]
-    #     last_message = messages[-1]
-    #     if last_message.tool_calls:
-    #         return "tools"
-    #     return "end"
 
     def should_continue(state: State) -> str:
         """
@@ -238,15 +264,15 @@ def build_graph() -> CompiledStateGraph:
             str: The name of the next node ('end' or 'reflect').
         """
         if state["rounds"] > MAX_ROUNDS:
-            return "end"
+            return "plan_exec"
         return "reflection"
 
     builder.add_conditional_edges("planner", should_continue)
     builder.add_edge("reflection", "planner")
 
-    # builder.add_node("tools", tool_node)
-    # builder.add_conditional_edges("planner", should_continue)
-    # builder.add_edge("tools", "planner")
+    builder.add_node("tools", tool_node)
+    builder.add_edge("tools", "plan_exec")
+    builder.add_conditional_edges("plan_exec", tools_condition)
     memory = MemorySaver()
     graph = builder.compile(checkpointer=memory)
     return graph
