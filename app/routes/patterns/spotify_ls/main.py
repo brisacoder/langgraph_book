@@ -207,7 +207,7 @@ async def plan_exec_node(state: State, config: RunnableConfig) -> Dict:
     partial_prompt = prompt.partial(system_prompt=Prompts.SYSTEM, exec_prompt=Prompts.EXEC)
     llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"), temperature=1.0)
     tools = get_spotify_tools() + get_plan_tools() + get_search_tools()
-    llm_with_tools = llm.bind_tools(tools)
+    llm_with_tools = llm.bind_tools(tools, tool_choice="auto")
     generate = partial_prompt | llm_with_tools
 
     try:

@@ -5,7 +5,7 @@ Execute the step-by-step plan:
 **Instructions:**
 
 - You must validate the plan before start working on it
-- Use your knowledge base when a Tool or Function is not available to solve a step
+- If a specific Tool or Function is not available for a given step, try using the search tool instead
 - Do not ask for user confirmation.
 """
 
