@@ -90,24 +90,6 @@ def get_playlists() -> List[Playlist]:
     return serialized_playlists
 
 
-# @tool
-# @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-# def get_audio_features(tracks: List[SpotifyID]):
-#     """
-#     Get audio features such as acousticness, danceability, energy, instrumentalness, tempo and valence.
-
-#     Args:
-#         tracks - a list of Spotify IDs
-
-#     Returns:
-#         Dict[str, Any]: Dictionary representing tracks audio features
-#     """
-
-#     sp = get_spotify_client()
-#     audio_features = sp.audio_features(tracks)
-#     return audio_features
-
-
 @tool
 def create_spotify_playlist(name: str, description: str) -> Dict[str, Any]:
     """
@@ -160,18 +142,22 @@ def add_tracks_to_playlist(
     playlist_id: SpotifyID, tracks: List[SpotifyID]
 ) -> Dict[str, Any]:
     """
-    Adds tracks to a Spotify playlist.
+    Adds tracks to a Spotify playlist in batches of 20.
 
     Args:
         playlist_id (SpotifyID): Spotify ID of the playlist.
-        tracks (List[SpotifyID]): List of Spotify ID tracks
+        tracks (List[SpotifyID]): List of Spotify ID tracks.
 
     Returns:
         Dict[str, Any]: A dictionary indicating success or error.
     """
     sp = get_spotify_client()
+    batch_size = 20
     try:
-        sp.playlist_add_items(playlist_id=playlist_id, items=tracks)
+        # Process tracks in batches of 20
+        for i in range(0, len(tracks), batch_size):
+            batch = tracks[i : i + batch_size]
+            sp.playlist_add_items(playlist_id=playlist_id, items=batch)
     except spotipy.SpotifyException as e:
         return {"error": str(e)}
     return {"success": True}
@@ -204,9 +190,7 @@ def filter_artists_by_id(
 
 
 @tool
-def filter_artists_by_name(
-    playlist_id: SpotifyID, new_artists: List[str]
-) -> Set[str]:
+def filter_artists_by_name(playlist_id: SpotifyID, new_artists: List[str]) -> Set[str]:
     """
     Checks `new_artists` against an existing Playlist. It returns a set
      of artists that can be used in a new playlist.
@@ -268,7 +252,7 @@ def get_spotify_id_from_name(names: List[str]) -> List[SpotifyID]:
     try:
         for name in names:
             # Fetch the playlist's tracks with pagination
-            spotify_data = sp.search(q=name, limit=1, type='artist')
+            spotify_data = sp.search(q=name, limit=1, type="artist")
             items = spotify_data.get("artists", {}).get("items", [])
             if items and "id" in items[0]:
                 spotify_ids.append(items[0]["id"])
@@ -300,7 +284,7 @@ def find_top_tracks_by_name(artists: List[str]) -> List[SpotifyID]:
         try:
             top_tracks = sp.artist_top_tracks(spotify_id, country="US")
             for track in top_tracks["tracks"]:
-                tracks.append(track["id"])
+                tracks.append(track["uri"])
         except Exception as e:
             print(f"Unexpected error for artist {spotify_id}: {str(e)}")
             continue
@@ -334,8 +318,8 @@ def get_artists_from_playlist(playlist_id: SpotifyID) -> Dict[SpotifyID, str]:
                     track_data = item["track"]
                     # Map API data to the Track model
                     for artist in track_data["artists"]:
-                        playlist_artists_id[artist["id"]] = artist["name"]
-                        playlist_artists_name[artist["name"]] = artist["id"]
+                        playlist_artists_id[artist["uri"]] = artist["name"]
+                        playlist_artists_name[artist["name"]] = artist["uri"]
                 # Check if there is a next page
                 if tracks["next"]:
                     # TODO unclear in this case
@@ -354,7 +338,6 @@ def get_artists_from_playlist(playlist_id: SpotifyID) -> Dict[SpotifyID, str]:
     return playlist_artists_id
 
 
-
 def get_spotify_tools() -> List:
     return [
         get_playlists,
@@ -364,5 +347,5 @@ def get_spotify_tools() -> List:
         filter_artists_by_name,
         get_artists_from_playlist,
         find_top_tracks_by_name,
-        find_top_tracks
+        find_top_tracks,
     ]
