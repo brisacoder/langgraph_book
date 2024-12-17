@@ -90,66 +90,6 @@ def get_playlists() -> List[Playlist]:
     return serialized_playlists
 
 
-@tool
-def get_track_list_from_playlist(playlist_id: SpotifyID) -> List[Dict[str, Any]]:
-    """
-    Retrieves the track list for a specific Spotify playlist.
-
-    Args:
-        playlist_id (SpotifyID): Spotify playlist ID in the format <base-62 number>
-
-    Returns:
-        List[Dict[str, Any]]: A list of Tracks
-    """
-    sp = get_spotify_client()
-    playlist_tracks: List[Track] = []
-    playlist_artists: Set[str] = set()
-
-    try:
-        # Fetch the playlist's tracks with pagination
-        playlist = sp.user_playlist(
-            user=os.getenv("SPOTIFY_USER_ID"), playlist_id=playlist_id
-        )
-        if "tracks" in playlist:
-            tracks = playlist["tracks"]
-            while tracks:
-                for item in tracks["items"]:
-                    track_data = item["track"]
-                    # Map API data to the Track model
-                    track = Track(
-                        id=track_data["id"],
-                        uri=track_data["uri"],
-                        name=track_data["name"],
-                        artists=[artist["name"] for artist in track_data["artists"]],
-                        album=track_data["album"]["name"],
-                        duration_ms=track_data.get("duration_ms"),
-                        explicit=track_data.get("explicit"),
-                        popularity=track_data.get("popularity"),
-                    )
-                    playlist_tracks.append(track)
-                    [
-                        playlist_artists.add(artist["name"])
-                        for artist in track_data["artists"]
-                    ]
-                # Check if there is a next page
-                if tracks["next"]:
-                    # TODO unclear in this case
-                    tracks = sp.next(tracks)
-                else:
-                    break
-    except spotipy.SpotifyException as e:
-        return [{"error": str(e)}]
-
-    # Save state
-    state = get_state()
-    state["tracks"] = playlist_tracks
-    state["artists"] = playlist_artists
-
-    # Serialize the tracks to JSON-serializable dictionaries
-    serialized_tracks = [track.model_dump() for track in playlist_tracks]
-    return serialized_tracks
-
-
 # @tool
 # @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
 # def get_audio_features(tracks: List[SpotifyID]):
@@ -385,6 +325,35 @@ def get_artists_from_playlist(playlist_id: SpotifyID) -> Dict[SpotifyID, str]:
     return playlist_artists_id
 
 
+@tool
+def get_spotify_id_from_name(names: List[str]) -> List[SpotifyID]:
+    """
+    Get the Spotify ID for each artist name
+
+    Args:
+        names (List[str]): A list of artist names
+
+    Returns:
+        List[SpotifyID]: A list of Spotify IDs (base-62 numbers)
+    """
+
+    spotify_ids: List[SpotifyID] = []
+    sp = get_spotify_client()
+
+    try:
+        for name in names:
+            # Fetch the playlist's tracks with pagination
+            spotify_data = sp.search(q=name, limit=1, type='artist')
+            items = spotify_data.get("artists", {}).get("items", [])
+            if items and "id" in items[0]:
+                spotify_ids.append(items[0]["id"])
+
+    except spotipy.SpotifyException as e:
+        print(f"Unexpected error for artist {name}: {str(e)}")
+
+    return spotify_ids
+
+
 def get_spotify_tools() -> List:
     return [
         get_playlists,
@@ -394,4 +363,5 @@ def get_spotify_tools() -> List:
         filter_artists_by_name,
         get_artists_from_playlist,
         find_top_tracks,
+        get_spotify_id_from_name
     ]
