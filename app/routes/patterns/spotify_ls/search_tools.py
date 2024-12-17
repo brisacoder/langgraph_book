@@ -137,14 +137,4 @@ def find_artists_timeline(artists: List[str]) -> ArtistTimelineResponse:
 
 
 def get_search_tools() -> List[BaseTool]:
-    # search_tool = TavilySearchResults(
-    #     max_results=5,
-    #     include_answer=True,
-    #     include_raw_content=True,
-    #     include_images=True,
-    #     # search_depth="advanced",
-    #     # include_domains = []
-    #     # exclude_domains = []
-    # )
-
     return [find_similar_artists, find_artists_timeline]
