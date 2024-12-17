@@ -1,5 +1,5 @@
 {
-    "dependencies": [".", "./models"],
+    "dependencies": [".", "./models", "./utils"],
     "graphs": {
         "spotify": "./main.py:build_graph"
     },
