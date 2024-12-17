@@ -6,6 +6,7 @@ from typing import Any, List, Set, Dict
 
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 from utils.spotify_client import get_spotify_client, get_spotify_user_authorization
+from utils.spotify_apis import get_spotify_uri_from_name
 from models.state import State, get_state
 from models.spotify_model import Playlist
 from spotify_types import SpotifyID
@@ -152,7 +153,7 @@ def filter_artists_by_id(
     state: State = get_state()
     artists: Set[SpotifyID] = set()
     state["candidate_artists"] = set(new_artists)
-    for v in state["artists_id"].keys():
+    for v in state["artists_uris"].keys():
         artists.add(v)
     valid_artists = state["candidate_artists"] - artists
     state["valid_artists"] = valid_artists
@@ -160,36 +161,37 @@ def filter_artists_by_id(
 
 
 @tool
-def filter_artists_by_name(playlist_id: SpotifyID, new_artists: List[str]) -> Set[str]:
+def filter_artists_by_name(playlist_id: SpotifyID, new_artists: List[str]) -> List[str]:
     """
     Checks `new_artists` against an existing Playlist. It returns a set
      of artists that can be used in a new playlist.
 
     Args:
         playlist_id (SpotifyID): Spotify playlist ID in the format <base-62 number>
-        new_artists (List[str]): List of artists names
+        new_artists (List[str]): List of artists URIs
 
     Returns:
         Set[str]: List of artists names that can be used in a new playlist
     """
     state: State = get_state()
-    valid_artists: Set[str] = set()
-    for artist in new_artists:
-        if artist not in state["artists_name"]:
-            valid_artists.add(artist)
+    spotify_uris = get_spotify_uri_from_name(new_artists)
+    valid_artists: List[str] = []
+    for uri in spotify_uris:
+        if uri not in state["artists_uri"]:
+            valid_artists.append(uri)
     return valid_artists
 
 
 @tool
-def find_top_tracks(artists: List[SpotifyID]) -> List[SpotifyID]:
+def find_top_tracks(artists: List[str]) -> List[str]:
     """
     Find top tracks for each of Spotify artist ID on the list.
 
     Args:
-        artists (List[SpotifyID]): List of Spotify artists IDs in <base-62 number>
+        artists (List[str]): List of Spotify artists URIs
 
     Returns:
-       List[SpotifyID]: A list of Spotify track IDs.
+       List[SpotifyID]: A list of Spotify track URIs.
     """
 
     tracks: List[SpotifyID] = []
@@ -198,7 +200,7 @@ def find_top_tracks(artists: List[SpotifyID]) -> List[SpotifyID]:
         try:
             top_tracks = sp.artist_top_tracks(artist, country="US")
             for track in top_tracks["tracks"]:
-                tracks.append(track["id"])
+                tracks.append(track["uri"])
         except Exception as e:
             print(f"Unexpected error for artist {artist}: {str(e)}")
             continue
@@ -211,24 +213,24 @@ def find_top_tracks_by_name(artists: List[str]) -> List[SpotifyID]:
     Find top tracks for each of Spotify artists name on the list.
 
     Args:
-        artists (List[SpotifyID]): List of Spotify artists IDs in <base-62 number>
+        artists (List[str]): List of Spotify artists IDs in <base-62 number>
 
     Returns:
-       List[SpotifyID]: A list of Spotify track IDs.
+       List[SpotifyID]: A list of Spotify track URIs.
     """
 
-    tracks: List[SpotifyID] = []
+    tracks: List[str] = []
 
-    spotify_ids = get_spotify_id_from_name(artists)
+    spotify_uris = get_spotify_uri_from_name(artists)
 
     sp = get_spotify_client()
-    for spotify_id in spotify_ids:
+    for uri in spotify_uris:
         try:
-            top_tracks = sp.artist_top_tracks(spotify_id, country="US")
+            top_tracks = sp.artist_top_tracks(uri, country="US")
             for track in top_tracks["tracks"]:
                 tracks.append(track["uri"])
         except Exception as e:
-            print(f"Unexpected error for artist {spotify_id}: {str(e)}")
+            print(f"Unexpected error for artist {uri}: {str(e)}")
             continue
     return tracks
 
@@ -245,7 +247,7 @@ def get_artists_from_playlist(playlist_id: SpotifyID) -> Dict[SpotifyID, str]:
         Dict[SpotifyID, str]: A dictionary where keys=SpotifyID name and value=artist name
     """
     sp = get_spotify_client()
-    playlist_artists_id: Dict[SpotifyID, str] = {}
+    playlist_artists_uri: Dict[SpotifyID, str] = {}
     playlist_artists_name: Dict[str, SpotifyID] = {}
 
     try:
@@ -260,7 +262,7 @@ def get_artists_from_playlist(playlist_id: SpotifyID) -> Dict[SpotifyID, str]:
                     track_data = item["track"]
                     # Map API data to the Track model
                     for artist in track_data["artists"]:
-                        playlist_artists_id[artist["uri"]] = artist["name"]
+                        playlist_artists_uri[artist["uri"]] = artist["name"]
                         playlist_artists_name[artist["name"]] = artist["uri"]
                 # Check if there is a next page
                 if tracks["next"]:
@@ -273,11 +275,11 @@ def get_artists_from_playlist(playlist_id: SpotifyID) -> Dict[SpotifyID, str]:
 
     # Save state
     state = get_state()
-    state["artists"] = playlist_artists_id
+    state["artists_uri"] = playlist_artists_uri
     state["artists_name"] = playlist_artists_name
 
     # Serialize the tracks to JSON-serializable dictionaries
-    return playlist_artists_id
+    return playlist_artists_uri
 
 
 def get_spotify_tools() -> List:
