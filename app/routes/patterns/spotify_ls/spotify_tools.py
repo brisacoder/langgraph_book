@@ -8,7 +8,7 @@ from typing import Any, List, Set, Dict
 
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 from models.state import State, get_state
-from models.spotify_model import Playlist, Track, Tracks
+from models.spotify_model import Playlist
 from spotify_types import SpotifyID
 
 
@@ -225,38 +225,11 @@ def filter_artists_by_name(
             valid_artists.add(artist)
     return valid_artists
 
-# @tool
-# def find_similar_artists(artists: List[SpotifyID]) -> Dict[SpotifyID, str]:
-#     """
-#     Find similar artists for a given a list of Spotify artists IDs.
-
-#     Args:
-#         artists (List[SpotifyID]): List of Spotify artists IDs in the format <base-62 number>
-
-#     Returns:
-#        Dict[SpotifyID, str]: A dictionary where keys are related artist URI and values are artist names
-#     """
-
-#     similar_artists: Dict[SpotifyID, str] = {}
-#     sp = get_spotify_user_authorization()
-#     for artist in artists:
-#         try:
-#             temp = sp.artist_related_artists(artist)
-#             related_artists = temp["artists"]
-#         except Exception as e:
-#             logger.error(f"Unexpected error for artist {artist}: {str(e)}")
-#             continue
-#         for item in related_artists:
-#             id = item.get("id")
-#             if id and id not in artists:
-#                 similar_artists[id] = item.get("name")
-#     return similar_artists
-
 
 @tool
 def find_top_tracks(artists: List[SpotifyID]) -> List[SpotifyID]:
     """
-    Find top tracks for each of Spotify artists on the list.
+    Find top tracks for each of Spotify artist ID on the list.
 
     Args:
         artists (List[SpotifyID]): List of Spotify artists IDs in <base-62 number>
@@ -274,6 +247,62 @@ def find_top_tracks(artists: List[SpotifyID]) -> List[SpotifyID]:
                 tracks.append(track["id"])
         except Exception as e:
             print(f"Unexpected error for artist {artist}: {str(e)}")
+            continue
+    return tracks
+
+
+def get_spotify_id_from_name(names: List[str]) -> List[SpotifyID]:
+    """
+    Get the Spotify ID for each artist name
+
+    Args:
+        names (List[str]): A list of artist names
+
+    Returns:
+        List[SpotifyID]: A list of Spotify IDs (base-62 numbers)
+    """
+
+    spotify_ids: List[SpotifyID] = []
+    sp = get_spotify_client()
+
+    try:
+        for name in names:
+            # Fetch the playlist's tracks with pagination
+            spotify_data = sp.search(q=name, limit=1, type='artist')
+            items = spotify_data.get("artists", {}).get("items", [])
+            if items and "id" in items[0]:
+                spotify_ids.append(items[0]["id"])
+
+    except spotipy.SpotifyException as e:
+        print(f"Unexpected error for artist {name}: {str(e)}")
+
+    return spotify_ids
+
+
+@tool
+def find_top_tracks_by_name(artists: List[str]) -> List[SpotifyID]:
+    """
+    Find top tracks for each of Spotify artists name on the list.
+
+    Args:
+        artists (List[SpotifyID]): List of Spotify artists IDs in <base-62 number>
+
+    Returns:
+       List[SpotifyID]: A list of Spotify track IDs.
+    """
+
+    tracks: List[SpotifyID] = []
+
+    spotify_ids = get_spotify_id_from_name(artists)
+
+    sp = get_spotify_client()
+    for spotify_id in spotify_ids:
+        try:
+            top_tracks = sp.artist_top_tracks(spotify_id, country="US")
+            for track in top_tracks["tracks"]:
+                tracks.append(track["id"])
+        except Exception as e:
+            print(f"Unexpected error for artist {spotify_id}: {str(e)}")
             continue
     return tracks
 
@@ -325,34 +354,6 @@ def get_artists_from_playlist(playlist_id: SpotifyID) -> Dict[SpotifyID, str]:
     return playlist_artists_id
 
 
-@tool
-def get_spotify_id_from_name(names: List[str]) -> List[SpotifyID]:
-    """
-    Get the Spotify ID for each artist name
-
-    Args:
-        names (List[str]): A list of artist names
-
-    Returns:
-        List[SpotifyID]: A list of Spotify IDs (base-62 numbers)
-    """
-
-    spotify_ids: List[SpotifyID] = []
-    sp = get_spotify_client()
-
-    try:
-        for name in names:
-            # Fetch the playlist's tracks with pagination
-            spotify_data = sp.search(q=name, limit=1, type='artist')
-            items = spotify_data.get("artists", {}).get("items", [])
-            if items and "id" in items[0]:
-                spotify_ids.append(items[0]["id"])
-
-    except spotipy.SpotifyException as e:
-        print(f"Unexpected error for artist {name}: {str(e)}")
-
-    return spotify_ids
-
 
 def get_spotify_tools() -> List:
     return [
@@ -362,6 +363,6 @@ def get_spotify_tools() -> List:
         filter_artists_by_id,
         filter_artists_by_name,
         get_artists_from_playlist,
-        find_top_tracks,
-        get_spotify_id_from_name
+        find_top_tracks_by_name,
+        find_top_tracks
     ]

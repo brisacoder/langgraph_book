@@ -1,11 +1,9 @@
 import os
 import logging
 
-from collections import defaultdict
-from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.tools import BaseTool
 from langchain_core.tools import tool
-from typing import List, Dict, Any
+from typing import List
 
 from langchain_core.messages import (
     AIMessage,
