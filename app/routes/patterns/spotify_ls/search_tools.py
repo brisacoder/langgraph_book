@@ -6,11 +6,7 @@ from langchain_core.tools import tool
 from typing import List
 
 from langchain_core.messages import (
-    AIMessage,
     HumanMessage,
-    SystemMessage,
-    BaseMessage,
-    ToolMessage,
 )
 from langchain_core.prompts import ChatPromptTemplate
 from models.artist_success import ArtistTimelineResponse
@@ -70,7 +66,7 @@ def find_similar_artists(artists: List[str]) -> ArtistSimilarList:
         llm_response = generate.invoke(
             {
                 "human_prompt": HumanMessage(
-                    content=f"Provide 2-3 similar artists to each artists in the list {artists}"
+                    content=f"Suggest 2-3 similar artists to each artists in the list {artists}. Do not repeat suggestions across artists. "
                 )
             }
         )
@@ -81,9 +77,9 @@ def find_similar_artists(artists: List[str]) -> ArtistSimilarList:
 
 
 @tool
-def find_artists_timeline(artists: List[str]) -> ArtistTimelineResponse:
+def find_artists_timeline(artists: List[str], year: int = 2010) -> ArtistTimelineResponse:
     """
-    Determines if each artist in the list achieved mainstream success after 2010.
+    Determines if each artist in the list achieved mainstream success after a certain year.
 
     Args:
         artists (List[str]): A list of artist names to evaluate.
@@ -93,13 +89,13 @@ def find_artists_timeline(artists: List[str]) -> ArtistTimelineResponse:
         ArtistTimelineResponse: A structured response with:
             - `artists`: List of objects containing:
                 - `name` (str): Artist's name.
-                - `success_after_2010` (bool): Whether the artist achieved success after 2010.
+                - `success` (bool): Whether the artist achieved success after the specified year.
 
         Example:
         {
             "artists": [
-                {"name": "Taylor Swift", "success_after_2010": True},
-                {"name": "Eric Clapton", "success_after_2010": False}
+                {"name": "Taylor Swift", "success": True},
+                {"name": "Eric Clapton", "success": False}
             ]
         }
 
@@ -126,7 +122,7 @@ def find_artists_timeline(artists: List[str]) -> ArtistTimelineResponse:
         llm_response = generate.invoke(
             {
                 "human_prompt": HumanMessage(
-                    content=f"For each artist, determine if they achieved success after 2010: {artists}"
+                    content=f"For each artist, determine if they achieved success after {year}: {artists}"
                 )
             }
         )

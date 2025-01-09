@@ -8,7 +8,7 @@ from spotify_model import Playlist, Track
 from models.spotify_types import SpotifyURI
 
 
-class State(TypedDict, total=False):
+class SpotifyState(TypedDict, total=False):
     """
     Represents the state of the conversation and Spotify information
 
@@ -27,14 +27,10 @@ class State(TypedDict, total=False):
     tracks: List[Track]
     artists_uri: Dict[SpotifyURI, str]
     artists_name: Dict[str, SpotifyURI]
-    messages: Annotated[List[BaseMessage], add_messages]
-    spotify_prompt: str
-    plan: Plan
-    rounds: Annotated[int, operator.add]
 
 
-state: State = State()
+spotify_state: SpotifyState = SpotifyState()
 
 
-def get_state():
-    return state
+def get_spotify_state():
+    return spotify_state

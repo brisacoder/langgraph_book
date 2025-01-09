@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import Dict
+from typing import Dict, Literal
 from dotenv import load_dotenv
 
 MAX_ROUNDS = 1
@@ -281,7 +281,7 @@ def build_graph() -> CompiledStateGraph:
     builder.add_edge("prune_messages", "plan_exec")
     builder.add_edge("end", END)
 
-    def should_continue(state: State) -> str:
+    def should_continue(state: State) -> Literal["prune_messages", "reflection"]:
         """
         Determines whether the conversation should continue or end.
 
@@ -295,7 +295,7 @@ def build_graph() -> CompiledStateGraph:
             return "prune_messages"
         return "reflection"
 
-    def should_call_tools(state: State) -> str:
+    def should_call_tools(state: State) -> Literal["tools", "end"]:
         messages = state["messages"]
         last_message = messages[-1]
         if last_message.tool_calls:

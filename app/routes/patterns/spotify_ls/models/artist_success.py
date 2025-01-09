@@ -4,13 +4,13 @@ from typing import List
 
 class ArtistSuccess(BaseModel):
     """
-    Represents an artist and whether they achieved mainstream success after 2010.
+    Represents an artist and whether they achieved mainstream success after a certain year.
     """
 
     name: str = Field(..., description="The name of the artist.")
-    success_after_2010: bool = Field(
+    success: bool = Field(
         ...,
-        description="Indicates whether the artist achieved mainstream success after 2010.",
+        description="Indicates whether the artist achieved mainstream success after a certain year.",
     )
 
 

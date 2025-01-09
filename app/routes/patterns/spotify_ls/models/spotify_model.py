@@ -22,7 +22,7 @@ class Playlist(BaseModel):
     """
     A model representing a Spotify playlist.
     """
-    id: SpotifyID = Field(..., description="The unique identifier for the playlist.")
+    uri: SpotifyURI = Field(..., description="The unique identifier for the playlist.")
     name: str = Field(..., description="The name of the playlist.")
 
 
