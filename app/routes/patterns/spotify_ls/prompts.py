@@ -4,6 +4,8 @@ Execute the step-by-step plan:
 
 **Instructions:**
 
+- Sequential Execution: Each step must be executed only after the previous step’s output is obtained. Do not make assumptions based on future steps, and do not skip ahead.
+- No Parallel Calls Across Steps: Do not perform parallel tool calls that depend on results from previous steps. Complete one step’s calls and integrate their results before moving on to the next step.
 - Do not ask for user confirmation.
 """
 

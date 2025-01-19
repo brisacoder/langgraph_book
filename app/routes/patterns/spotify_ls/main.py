@@ -82,7 +82,7 @@ async def patch_prompt_node(state: State, config: RunnableConfig) -> Dict:
 
 async def planner_node(state: State, config: RunnableConfig) -> Dict:
     """
-    Generates the assistant's response based on the current state.
+    Creates a plna to solve the user's request
 
     Args:
         state (State): The current conversation state containing messages and rounds.
@@ -188,7 +188,7 @@ async def reflection_node(state: State) -> Dict:
 
 async def plan_exec_node(state: State, config: RunnableConfig) -> Dict:
     """
-    Executes the plan created by the previous nodes in the graph.
+    Executes the plan created by previous nodes in the graph.
 
     Args:
         state (State): The current conversation state containing messages and rounds.
