@@ -4,14 +4,20 @@ Execute the step-by-step plan:
 
 **Instructions:**
 
-- Sequential Execution: Each step must be executed only after the previous step’s output is obtained. Do not make assumptions based on future steps, and do not skip ahead.
-- No Parallel Calls Across Steps: Do not perform parallel tool calls that depend on results from previous steps. Complete one step’s calls and integrate their results before moving on to the next step.
+- **Provide Clear Updates:** In your responses, clearly state which step you are working on and provide updates on your progress, ensuring transparency.
+
+- **Be Thorough:** Ensure that all elements of the task are completed fully. If the task involves processing multiple items (e.g., a list of items), process each item individually, even if it requires multiple iterations or tool calls.
+
+- **Sequential Execution**: Each step must be executed only after the previous step’s output is obtained. Do not make assumptions based on future steps, and do not skip ahead.
+
+- **No Parallel Calls Across Steps**: Do not perform parallel tool calls that depend on results from previous steps. Complete one step’s calls and integrate their results before moving on to the next step.
+
+- **Handle Limitations Proactively:** If you encounter any limitations (such as processing limits), implement solutions like batching or looping to ensure all items are processed.
+
 - Do not ask for user confirmation.
 """
 
     HUMAN = """
-Create a step-by-step plan with atomic tasks to solve the following problem:
-
 **Objective:** Build a Spotify playlist with tracks that have the same vibe and genres as the playlist named 'New Rock and Blues', following the rules below.
 
 **Rules:**
@@ -36,7 +42,6 @@ Create a step-by-step plan with atomic tasks to solve the following problem:
 **Instructions:**
 
 - Sequential Execution: Each step must be executed only after the previous step’s output is obtained. Do not make assumptions based on future steps, and do not skip ahead.
-- No Parallel Calls Across Steps: Do not perform parallel tool calls that depend on results from previous steps. Complete one step’s calls and integrate their results before moving on to the next step.
 - No User Confirmation: Do not ask for user confirmation at any point. Just proceed with the described steps.
 - Feedback Integration: If you receive feedback, always add the new content to your latest answer without removing or altering any
 accurate information from your current response. **Under no circumstances should you remove or modify accurate
@@ -51,7 +56,7 @@ Guidelines:
 
 - **Carefully Read Instructions:** Before starting any task, read all user instructions thoroughly to ensure complete understanding.
 
-- **Create a Detailed Plan:** Develop a step-by-step plan that addresses every aspect of the user's requirements. Validate this plan before execution.
+- **Create a Detailed Plan:** Develop a step-by-step plan with atomic tasks that addresses every aspect of the user's requirements. Validate this plan before execution.
 
 - **Utilize Advanced Planning Structures:** Do not limit yourself to linear or sequential plans. Employ loops for repetitive tasks, branches for conditional logic, and other programming constructs to handle complex tasks and decision-making processes.
 
@@ -60,8 +65,6 @@ Guidelines:
 - **Be Thorough:** Ensure that all elements of the task are completed fully. If the task involves processing multiple items (e.g., a list of items), process each item individually, even if it requires multiple iterations or tool calls.
 
 - **Handle Limitations Proactively:** If you encounter any limitations (such as processing limits), implement solutions like batching or looping to ensure all items are processed.
-
-- **Provide Clear Updates:** In your responses, clearly state which step you are working on and provide updates on your progress, ensuring transparency.
 
 - **Do Not Assume or Simplify:** Avoid making assumptions or simplifying tasks unless explicitly instructed by the user.
 

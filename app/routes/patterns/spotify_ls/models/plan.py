@@ -54,7 +54,7 @@ class Step(BaseModel):
     name: str = Field(..., description="URL-friendly name for the task, e.g., 'deploy-application'. Must not contain spaces or special characters.")
     type: str = Field(..., description="Type of the step. Possible values: 'action', 'loop', 'branch', 'parallel'.")
     description: str = Field(..., description="A detailed description of the task")
-    success_criteria: str = Field(..., description="Clear and verifiable criteria for task completion")    
+    success_criteria: str = Field(..., description="Clear and verifiable criteria for task completion")  
     tool: Optional[str] = Field(default=None, description="A `Tool` instance required for the step, if applicable.")
     action: Optional[str] = Field(default=None, description="Action description in plain English.")
     condition: Optional[str] = Field(default=None, description="Condition expression for loops and branches.")

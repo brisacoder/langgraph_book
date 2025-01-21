@@ -12,7 +12,7 @@ from langgraph.prebuilt import ToolNode
 from models.plan_critique import PlanCritique
 from tools_api import wrap_as_tool
 from search_tools import get_search_tools
-from spotify_tools import get_spotify_tools
+from tools.spotify_tools import get_spotify_tools
 from models.plan import Plan, get_plan_tools
 from langchain_openai import ChatOpenAI
 
@@ -55,7 +55,7 @@ def default_state() -> Dict:
 
 async def patch_prompt_node(state: State, config: RunnableConfig) -> Dict:
     """
-    Generates the assistant's response based on the current state.
+    Patch the user's prompt to include a list of Tools
 
     Args:
         state (State): The current conversation state containing messages and rounds.
@@ -82,7 +82,7 @@ async def patch_prompt_node(state: State, config: RunnableConfig) -> Dict:
 
 async def planner_node(state: State, config: RunnableConfig) -> Dict:
     """
-    Creates a plna to solve the user's request
+    Creates a plan to solve the user's request
 
     Args:
         state (State): The current conversation state containing messages and rounds.
@@ -103,7 +103,7 @@ async def planner_node(state: State, config: RunnableConfig) -> Dict:
             MessagesPlaceholder(variable_name="messages"),
         ]
     )
-    partial_prompt = prompt.partial(system_prompt=Prompts.HUMAN)
+    partial_prompt = prompt.partial(system_prompt=Prompts.SYSTEM)
     llm = ChatOpenAI(model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"), temperature=1.0)
     llm_with_structure = llm.with_structured_output(
         schema=Plan, method="json_schema", include_raw=True
