@@ -1,6 +1,6 @@
-langchain-community==0.3.8
-langchain-openai==0.2.10
+langchain-community==0.3.14
+langchain-openai==0.3.0
 python-dotenv==1.0.1
-langchain-core==0.3.21
-langgraph==0.2.53
-
+langchain-core==0.3.30
+langgraph==0.2.64
+langgraph-cli[inmem]==0.1.68

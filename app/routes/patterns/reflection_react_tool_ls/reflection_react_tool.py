@@ -211,6 +211,5 @@ def build_graph() -> CompiledStateGraph:
     builder.add_edge("reflect", "generate")
     memory = MemorySaver()
     graph = builder.compile(checkpointer=memory)
-    graph.get_state
     return graph
 

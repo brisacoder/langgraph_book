@@ -1,7 +1,7 @@
 import operator
 import os
 import logging
-from typing import Dict, List
+from typing import Dict, List, Literal
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, BaseMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.config import RunnableConfig
@@ -14,7 +14,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import TypedDict
 from prompts import Prompts
 
-MAX_ROUNDS = 3
+MAX_ROUNDS = 2
 
 
 def default_state() -> Dict:
@@ -214,7 +214,7 @@ def build_graph() -> CompiledStateGraph:
     builder.add_edge("reflect", "generate")
     builder.add_edge("end", END)
 
-    def should_continue(state: State) -> str:
+    def should_continue(state: State) -> Literal["end", "reflect"]:
         """
         Determines whether the conversation should continue or end.
 
@@ -231,5 +231,4 @@ def build_graph() -> CompiledStateGraph:
     builder.add_conditional_edges("generate", should_continue)
     memory = MemorySaver()
     graph = builder.compile(checkpointer=memory)
-    graph.get_state
     return graph

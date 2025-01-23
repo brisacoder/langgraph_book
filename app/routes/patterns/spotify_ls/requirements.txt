@@ -7,3 +7,4 @@ spotipy==2.25.0
 langsmith==0.2.11
 pydantic==2.10.5
 tenacity==9.0.0
+langgraph-cli[inmem]==0.1.68
